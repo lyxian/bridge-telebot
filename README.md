@@ -14,7 +14,7 @@
         - choosing partner
         - re-shuffling
       - game round
-        - deciding to win/lose round
+        - deciding to win/lose round (bot)
         - breaking trump
       - game end
         - end of 13 rounds
@@ -31,8 +31,11 @@
 4. card (ok)
 5. end of 13 rounds
 
-**v2**
-.
+**v1b** (ongoing)
+
+1. bidding
+2. required sets won
+3. deciding to win/lose round (bot)
 
 ##Packages (list required packages & run .scripts/python-pip.sh)
 
