@@ -6,6 +6,7 @@
       - card distribution
         - deck
         - card
+        - determine hand strength
       - player management
         - init players
         - customize player
@@ -36,6 +37,7 @@
 1. bidding
 2. required sets won
 3. deciding to win/lose round (bot)
+4. determine hand strength
 
 ##Packages (list required packages & run .scripts/python-pip.sh)
 
