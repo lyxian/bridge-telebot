@@ -34,10 +34,27 @@
 
 **v1b** (ongoing)
 
-1. bidding
-2. required sets won
+1. bidding (ok)
+2. required sets won (ok) (!stop early)
 3. deciding to win/lose round (bot)
-4. determine hand strength
+4. determine hand strength (ok)
+
+# AI Programming
+
+**Bidding**
+
+- suit
+  - check strongest long running suit of at least 4
+  - check increase in strength with next best card
+  - skip if favorable
+    - same suit
+    - has at least 4 points in bidded suit
+- tricks
+  - strength / 4
+  - remainder / 4 = % to go +1
+
+**Playing**
+.
 
 ##Packages (list required packages & run .scripts/python-pip.sh)
 

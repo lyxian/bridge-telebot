@@ -1,4 +1,5 @@
-from exceptions import IncorrectPlayerCount
+from exceptions import IncorrectPlayerCount, CannotFindLikelyPartner, ImprobableHand
+from collections import Counter
 from random import sample
 from enum import Enum
 
@@ -43,13 +44,45 @@ cardMappings = {
     'spade': '♠'
 }
 
+cardStrength = {
+    'jack': 1,
+    'queen': 2,
+    'king': 3,
+    'ace': 4,
+}
+
+
+
+class Bid:
+
+    def __init__(self, number, suit):
+        self.number = number
+        self.suit = suit
+
+    def __str__(self):
+        return '{}{}'.format(self.number, cardMappings[self.suit])
+
+    def __lt__(self, other):
+        if self.number == other.number:
+            return Suit[self.suit].value < Suit[other.suit].value
+        else:
+            return self.number < other.number
+
 class Card:
 
     def __init__(self, rank, suit):
-        self.rank = Rank(rank).name
-        self.suit = Suit(suit).name
+        if isinstance(rank, int):
+            self.rank = Rank(rank).name
+        else:
+            self.rank = rank
+        if isinstance(suit, int):
+            self.suit = Suit(suit).name
+        else:
+            self.suit = suit
         self.isTrump = False
         self.isRoundSuit = False
+        self.strength = cardStrength.get(self.rank, 0)
+        self.owner = None
 
     def __str__(self):
         return '{:>2}{}'.format(cardMappings[self.rank], cardMappings[self.suit])
@@ -89,6 +122,10 @@ class Deck:
     def _setGameRules(self, game):
         for card in self.deck:
             card.isTrump = card.suit == game.trump
+        for player in game.players:
+            for card in player.hand:
+                card.owner = player
+        game.setTeams()
 
     def _setRoundRules(self, game):
         for card in self.deck:
@@ -102,3 +139,37 @@ class Deck:
             print('Deck distributed.')
         else:
             raise IncorrectPlayerCount
+
+    @staticmethod
+    def showBySuit(cards):
+        return {suit: [card for card in cards if card.suit == suit] for suit in Suit._member_names_}
+
+    @staticmethod
+    def showBySuitStr(cards):
+        return {suit: [str(card) for card in cards if card.suit == suit] for suit in Suit._member_names_}
+
+    @staticmethod
+    def showStrength(cards):
+        # print(f"rank: {sum([i.strength for i in cards])} || suit: {sum(map(lambda x: x-4 if x>4 else 0, Counter([i.suit for i in cards]).values()))}")
+        return sum([i.strength for i in cards]) + \
+            sum(map(lambda x: x-4 if x>4 else 0, Counter([i.suit for i in cards]).values()))
+
+    @staticmethod
+    def showSuitStrength(cards):
+        return {suit: Deck.showStrength([card for card in cards if card.suit == suit]) for suit in Suit._member_names_}
+
+    @staticmethod
+    def showLikelyPartner(cards, deck):
+        suit = cards[0].suit
+        for card in cards:
+            if card.suit != suit:
+                raise CannotFindLikelyPartner
+        ranks = [card.rank for card in cards]
+        for rank in Rank._member_names_[::-1]:
+            if rank not in ranks:
+                # return Card(Rank[rank], Suit[suit])
+                card = [card for card in deck.deck if card.rank == rank and card.suit == suit][0]
+                print(card)
+                return card
+                # return Card(rank, suit)
+        raise ImprobableHand
