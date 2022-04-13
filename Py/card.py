@@ -167,9 +167,5 @@ class Deck:
         ranks = [card.rank for card in cards]
         for rank in Rank._member_names_[::-1]:
             if rank not in ranks:
-                # return Card(Rank[rank], Suit[suit])
-                card = [card for card in deck.deck if card.rank == rank and card.suit == suit][0]
-                print(card)
-                return card
-                # return Card(rank, suit)
+                return [card for card in deck.deck if card.rank == rank and card.suit == suit][0]
         raise ImprobableHand

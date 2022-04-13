@@ -6,27 +6,27 @@ def play(game, firstPlayer):
     for _ in range(13):
         playerOrder = game.getPlayerOrder(firstPlayer)
         game.setRoundSuit()
-        plays = {}
+        playedCards = []
 
         for player in playerOrder:
             if isinstance(player, Player):
                 if game.roundSuit:
                     print(f'Round Suit: {game.roundSuit} || ', end='')
                 print('Played Cards: ', end='')
-                print(*[f'{player.name}: {card}' for card, player in plays.items()], sep=', ')
+                print(*[f'{card.owner.name}: {card}' for card in playedCards], sep=', ')
             playedCard = player.play(game)
-            plays[playedCard] = player
+            playedCards.append(playedCard)
             if game.roundSuit is None:
                 game.setRoundSuit(playedCard.suit)
                 deck._setRoundRules(game)
 
-        winningCard = sorted(plays.keys())[-1]
-        print(*[f'{player.name}: {card}' for card, player in plays.items()], sep=' | ')
-        print(f'{plays[winningCard].name} wins with {winningCard}\n')
-        firstPlayer = plays[winningCard]
+        winningCard = sorted(playedCards, reverse=True)[0]
+        print(*[f'{card.owner.name}: {card}' for card in playedCards], sep=' | ')
+        print(f'{winningCard.owner.name} wins with {winningCard}\n')
+        firstPlayer = winningCard.owner
         firstPlayer.tricks += 1
     
-    print(f'===Game Ended===\n{game._results}\n{game._teamResults}')
+    print(f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}')
 
 def bidding():
     pass
@@ -61,11 +61,11 @@ while continueBidding:
         bid = player.bid(game)
         if bid == 'pass':
             skippedPlayers.append(player)
-            print(f'{player.name} passed')
+            print(f'{player.name} passed\n')
         else:
             game.currentBid = bid
             game.currentBidder = player
-            print(f'Current bid by {player.name} is: {bid}')
+            print(f'Current bid by {player.name} is: {bid}\n')
         
     if skippedPlayers:
         for player in skippedPlayers:
@@ -84,7 +84,10 @@ game.setTrump(trump)
 deck._setGameRules(game)
 # cards = deck.deck[:13]
 # testing(cards)
-print(f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+if winningBidder.likelyPartner.owner == A:
+    print(f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} (YOU)')
+else:
+    print(f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} ({winningBidder.likelyPartner.owner.name})')
 
 # ==Playing==
 firstPlayer = game.getPlayerOrder(winningBidder)[1]

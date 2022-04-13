@@ -23,10 +23,10 @@ class Game():
         otherTeamScore = sum([i.tricks for i in self.otherTeam])
         biddingTeamMembers = ', '.join([i.name for i in self.biddingTeam])
         otherTeamMembers = ', '.join([i.name for i in self.otherTeam])
-        if biddingTeamScore > requiredBidTricks:
-            biddingTeamScore = f'{biddingTeamScore} (WON at least {requiredBidTricks} tricks)'
+        if biddingTeamScore >= requiredBidTricks:
+            biddingTeamScore = f'{biddingTeamScore} (WON ≥{requiredBidTricks} tricks)'
         else:
-            otherTeamScore = f'{otherTeamScore} (WON at least {14-requiredBidTricks} tricks)'
+            otherTeamScore = f'{otherTeamScore} (WON ≥{14-requiredBidTricks} tricks)'
         return f'Bidding Team ({biddingTeamMembers}): {biddingTeamScore}\nOther Team ({otherTeamMembers}): {otherTeamScore}'
 
     @property
@@ -40,13 +40,15 @@ class Game():
 
     def askPlayer(self, winningBidder):
         if isinstance(winningBidder, Player):
+            print(f'Your Hand: {Deck.showBySuitStr(winningBidder.hand)}')
             rank, suit = input('Enter partner (eg. "ace spade"): ').split()
-            winningBidder.likelyPartner = Card(rank, suit)
+            winningBidder.setLikelyPartner([card for card in self.deck.deck if card.rank == rank and card.suit == suit][0])
             return
         else:
             return
 
     def setTeams(self):
+        self.currentBidder.likelyPartner.owner.partner = self.currentBidder # Partner Info
         self.biddingTeam = [self.currentBidder, self.currentBidder.likelyPartner.owner]
         self.otherTeam = [i for i in self.players if i not in self.biddingTeam]
 
@@ -103,7 +105,7 @@ class Bot(PlayerBase):
     
     def __init__(self, name, cards=[]):
         super().__init__(name, cards)
-        self.knowPartner = False
+        self.partner = None
 
     def bid(self, game):
         handBySuit = Deck.showBySuit(self.hand)
@@ -138,12 +140,19 @@ class Bot(PlayerBase):
         return self.hand.pop(self._handIndex[cardPlayed])
 
     def think(self, game):
+        if self.partner:
+            pass
+        else:
+            pass
         pass
 
 class Player(PlayerBase):
     
     def __init__(self, name, cards=[]):
         super().__init__(name, cards)
+
+    def setLikelyPartner(self, card):
+        self.likelyPartner = card
 
     def bid(self, game):
         print(Deck.showBySuitStr(self.hand))
