@@ -103,6 +103,7 @@ class Bot(PlayerBase):
     
     def __init__(self, name, cards=[]):
         super().__init__(name, cards)
+        self.knowPartner = False
 
     def bid(self, game):
         handBySuit = Deck.showBySuit(self.hand)
@@ -135,6 +136,9 @@ class Bot(PlayerBase):
             self.availableCards = self.hand
         cardPlayed = str(sample(self.availableCards, k=1)[0]).strip()
         return self.hand.pop(self._handIndex[cardPlayed])
+
+    def think(self, game):
+        pass
 
 class Player(PlayerBase):
     

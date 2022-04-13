@@ -9,7 +9,7 @@ def play(game, firstPlayer):
         plays = {}
 
         for player in playerOrder:
-            if player == A:
+            if isinstance(player, Player):
                 if game.roundSuit:
                     print(f'Round Suit: {game.roundSuit} || ', end='')
                 print('Played Cards: ', end='')

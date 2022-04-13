@@ -24,7 +24,7 @@
 
 # Development
 
-**v1** (working)
+**v1** (done)
 
 1. card distribution
 2. init players
@@ -32,12 +32,17 @@
 4. card (ok)
 5. end of 13 rounds
 
-**v1b** (ongoing)
+**v1b** (done)
 
 1. bidding (ok)
 2. required sets won (ok) (!stop early)
 3. deciding to win/lose round (bot)
 4. determine hand strength (ok)
+
+**v1.1** (ongoing)
+
+1. bot intelligence during rounds
+2. indicate if player is partner
 
 # AI Programming
 
@@ -54,7 +59,22 @@
   - remainder / 4 = % to go +1
 
 **Playing**
-.
+
+- variables
+  - who played highest
+  - who played partner card
+  - knows partner
+    - bidding team
+    - other team
+  - cards after
+    - gauge player after(\*)
+- actions
+  - lose
+    - no choice
+    - give chance
+  - win
+    - eat enemy/unsure
+    - use highest / lowest trump
 
 ##Packages (list required packages & run .scripts/python-pip.sh)
 
