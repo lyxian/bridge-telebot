@@ -138,11 +138,11 @@ class Bot(PlayerBase):
         if game.currentBid is None:
             return Bid(minBid, bestSuit)
         else:
-            if game.currentBid > Bid(maxBid, bestSuit):
+            if Bid(maxBid, bestSuit) < game.currentBid or game.currentBid.suit == bestSuit:
                 return 'pass'
             else:
                 bidObj = Bid(minBid, bestSuit)
-                while game.currentBid > bidObj:
+                while bidObj <= game.currentBid:
                     minBid += 1
                     bidObj = Bid(minBid, bestSuit)
                 return bidObj
