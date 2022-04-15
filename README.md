@@ -49,6 +49,12 @@
 **v1.2** (ongoing)
 
 1. bot feed partner
+2. dump least suit
+3. all bots know breakTrump suit
+
+**v2** (ongoing)
+
+1. port to telegram
 
 # AI Programming
 
