@@ -51,8 +51,6 @@ cardStrength = {
     'ace': 4,
 }
 
-
-
 class Bid:
 
     def __init__(self, number, suit):
@@ -67,6 +65,12 @@ class Bid:
             return Suit[self.suit].value < Suit[other.suit].value
         else:
             return self.number < other.number
+
+    def __le__(self, other):
+        if self.number == other.number:
+            return Suit[self.suit].value <= Suit[other.suit].value
+        else:
+            return self.number <= other.number
 
 class Card:
 

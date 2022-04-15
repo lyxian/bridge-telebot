@@ -39,12 +39,16 @@
 3. deciding to win/lose round (bot)
 4. determine hand strength (ok)
 
-**v1.1** (ongoing)
+**v1.1** (done)
 
-1. bot intelligence during rounds
-2. indicate if player is partner
+1. bot intelligence during rounds (still ok)
+2. indicate if player is partner (ok)
 3. check for no trump first round (ok)
-4. check for break trump
+4. check for break trump (ok)
+
+**v1.2** (ongoing)
+
+1. bot feed partner
 
 # AI Programming
 
