@@ -133,14 +133,19 @@ class Bot(PlayerBase):
 
         wildBid = bidStrength % 4 >= sample(range(1,5), k=1)[0]
         maxBid = bidStrength // 4 + wildBid
-        minBid = min(game.currentBid.number, maxBid) if game.currentBid else 1
-
-        bidObj = Bid(minBid, bestSuit)
+        minBid = 1
         self.likelyPartner = likelyPartner
-        if game.currentBid is None or game.currentBid < bidObj:
-            return bidObj
+        if game.currentBid is None:
+            return Bid(minBid, bestSuit)
         else:
-            return 'pass'
+            if game.currentBid > Bid(maxBid, bestSuit):
+                return 'pass'
+            else:
+                bidObj = Bid(minBid, bestSuit)
+                while game.currentBid > bidObj:
+                    minBid += 1
+                    bidObj = Bid(minBid, bestSuit)
+                return bidObj
 
     def play(self, game):
 
