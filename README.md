@@ -43,6 +43,7 @@
 
 1. bot intelligence during rounds
 2. indicate if player is partner
+3. check for no trump first round
 
 # AI Programming
 

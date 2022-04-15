@@ -56,7 +56,8 @@ class Game():
     def setTrump(self, trump=None):
         self.trump = trump
 
-    def setRoundSuit(self, suit=None):
+    def setRoundSuit(self, roundCount, suit=None):
+        self.roundCount = roundCount
         self.roundSuit = suit
 
     def resetRoundCards(self):
@@ -146,11 +147,14 @@ class Bot(PlayerBase):
         # - play lowest (lose)
         # - play lowest from least suit
         # - play lowest trump (win)
-
         if self.canFollow(game):
             self.availableCards = [_ for _ in self.hand if _.suit == game.roundSuit]
         else:
-            self.availableCards = self.hand
+            if game.roundCount == 1:
+                print('No trump allowed')
+                self.availableCards = [_ for _ in self.hand if _.suit != game.trump]
+            else:
+                self.availableCards = self.hand
 
         if game.playedCards:
             highestCard = sorted(game.playedCards, reverse=True)[0]
@@ -195,7 +199,11 @@ class Player(PlayerBase):
         if self.canFollow(game):
             self.availableCards = [_ for _ in self.hand if _.suit == game.roundSuit]
         else:
-            self.availableCards = self.hand
+            if game.roundCount == 1:
+                print('No trump allowed')
+                self.availableCards = [_ for _ in self.hand if _.suit != game.trump]
+            else:
+                self.availableCards = self.hand
         while True:
             try:
                 idx = int(input(f'Enter index of card to be played {self._validIndex}: '))

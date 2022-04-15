@@ -3,9 +3,9 @@ from user import Bot, Player, Game
 from exceptions import IncorrectPlayerCount, InvalidComparison
 
 def play(game, firstPlayer):
-    for _ in range(13):
+    for count in range(13):
         playerOrder = game.getPlayerOrder(firstPlayer)
-        game.setRoundSuit()
+        game.setRoundSuit(count+1)
         game.resetRoundCards()
 
         for player in playerOrder:
@@ -20,7 +20,7 @@ def play(game, firstPlayer):
             playedCard = player.play(game)
             game.addRoundCards(playedCard)
             if game.roundSuit is None:
-                game.setRoundSuit(playedCard.suit)
+                game.setRoundSuit(count+1, playedCard.suit)
                 deck._setRoundRules(game)
 
         winningCard = sorted(game.playedCards, reverse=True)[0]
