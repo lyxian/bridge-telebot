@@ -101,10 +101,6 @@ class Card:
                 return True
             else:
                 return Suit[self.suit].value < Suit[other.suit].value
-                # raise InvalidComparison(self, other)
-
-    # def __gt__(self, other):
-    #     return Rank[self.rank].value >= Rank[other.rank].value and Suit[self.suit].value >= Suit[other.suit].value
 
 class Deck:
 
@@ -150,7 +146,6 @@ class Deck:
 
     @staticmethod
     def showStrength(cards):
-        # print(f"rank: {sum([i.strength for i in cards])} || suit: {sum(map(lambda x: x-4 if x>4 else 0, Counter([i.suit for i in cards]).values()))}")
         return sum([i.strength for i in cards]) + \
             sum(map(lambda x: x-4 if x>4 else 0, Counter([i.suit for i in cards]).values()))
 
@@ -169,3 +164,19 @@ class Deck:
             if rank not in ranks:
                 return [card for card in deck.deck if card.rank == rank and card.suit == suit][0]
         raise ImprobableHand
+
+    @staticmethod
+    def getHigherCard(card, cards):
+        _ = cards.copy(); _.append(card); _ = sorted(_)
+        higherCardIndex = _.index(card)
+        if higherCardIndex < len(cards):
+            return cards[higherCardIndex]
+        else:
+            return None
+
+    @staticmethod
+    def getLowestCard(cards):
+        return sorted(cards)[0]
+
+if __name__ == '__main__':
+    pass

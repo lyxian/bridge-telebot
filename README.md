@@ -75,6 +75,8 @@
   - win
     - eat enemy/unsure
     - use highest / lowest trump
+- feedback
+  - if second last player, should play middle higher card
 
 ##Packages (list required packages & run .scripts/python-pip.sh)
 

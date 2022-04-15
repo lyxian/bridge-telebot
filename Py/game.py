@@ -6,22 +6,25 @@ def play(game, firstPlayer):
     for _ in range(13):
         playerOrder = game.getPlayerOrder(firstPlayer)
         game.setRoundSuit()
-        playedCards = []
+        game.resetRoundCards()
 
         for player in playerOrder:
             if isinstance(player, Player):
                 if game.roundSuit:
                     print(f'Round Suit: {game.roundSuit} || ', end='')
                 print('Played Cards: ', end='')
-                print(*[f'{card.owner.name}: {card}' for card in playedCards], sep=', ')
+                if game.playedCards:
+                    print(*[f'{card.owner.name}: {card}' for card in game.playedCards], sep=', ')
+                else:
+                    print('None')
             playedCard = player.play(game)
-            playedCards.append(playedCard)
+            game.addRoundCards(playedCard)
             if game.roundSuit is None:
                 game.setRoundSuit(playedCard.suit)
                 deck._setRoundRules(game)
 
-        winningCard = sorted(playedCards, reverse=True)[0]
-        print(*[f'{card.owner.name}: {card}' for card in playedCards], sep=' | ')
+        winningCard = sorted(game.playedCards, reverse=True)[0]
+        print(*[f'{card.owner.name}: {card}' for card in game.playedCards], sep=' | ')
         print(f'{winningCard.owner.name} wins with {winningCard}\n')
         firstPlayer = winningCard.owner
         firstPlayer.tricks += 1
@@ -82,12 +85,11 @@ else:
     trump = game.currentBid.suit
 game.setTrump(trump)
 deck._setGameRules(game)
-# cards = deck.deck[:13]
-# testing(cards)
+
 if winningBidder.likelyPartner.owner == A:
     print(f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} (YOU)')
 else:
-    print(f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} ({winningBidder.likelyPartner.owner.name})')
+    print(f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
 
 # ==Playing==
 firstPlayer = game.getPlayerOrder(winningBidder)[1]

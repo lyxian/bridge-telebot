@@ -11,6 +11,7 @@ class Game():
         self.currentBidder = None
         self.biddingTeam = None
         self.otherTeam = None
+        # check no trump first round
 
     @property
     def _results(self):
@@ -57,6 +58,12 @@ class Game():
 
     def setRoundSuit(self, suit=None):
         self.roundSuit = suit
+
+    def resetRoundCards(self):
+        self.playedCards = []
+
+    def addRoundCards(self, card):
+        self.playedCards.append(card)
 
     def startBidding(self):
         pass
@@ -132,19 +139,35 @@ class Bot(PlayerBase):
             return 'pass'
 
     def play(self, game):
+
+        # Possible actions
+        # - play highest
+        # - play min. highest
+        # - play lowest (lose)
+        # - play lowest from least suit
+        # - play lowest trump (win)
+
         if self.canFollow(game):
             self.availableCards = [_ for _ in self.hand if _.suit == game.roundSuit]
         else:
             self.availableCards = self.hand
-        cardPlayed = str(sample(self.availableCards, k=1)[0]).strip()
-        return self.hand.pop(self._handIndex[cardPlayed])
 
-    def think(self, game):
-        if self.partner:
-            pass
+        if game.playedCards:
+            highestCard = sorted(game.playedCards, reverse=True)[0]
+            playedCardOwners = [card.owner for card in game.playedCards]
+            if self.partner == highestCard.owner:
+                cardPlayed = Deck.getLowestCard(self.availableCards)
+                return self.hand.pop(self._handIndex[str(cardPlayed).strip()])
+            # print(self.name, Deck.getHigherCard(highestCard, self.availableCards), [str(i) for i in self.availableCards])
+            cardPlayed = Deck.getHigherCard(highestCard, self.availableCards)
+            if cardPlayed:
+                return self.hand.pop(self._handIndex[str(cardPlayed).strip()])
+            else:
+                cardPlayed = Deck.getLowestCard(self.availableCards)
+                return self.hand.pop(self._handIndex[str(cardPlayed).strip()])
         else:
-            pass
-        pass
+            cardPlayed = Deck.getLowestCard(self.availableCards)
+            return self.hand.pop(self._handIndex[str(cardPlayed).strip()])
 
 class Player(PlayerBase):
     
@@ -173,7 +196,17 @@ class Player(PlayerBase):
             self.availableCards = [_ for _ in self.hand if _.suit == game.roundSuit]
         else:
             self.availableCards = self.hand
-        idx = int(input(f'Enter index of card to be played {self._validIndex}: '))
+        while True:
+            try:
+                idx = int(input(f'Enter index of card to be played {self._validIndex}: '))
+                if 0 <= idx < len(self.availableCards):
+                    break
+                else:
+                    raise Exception('index beyond hand size')
+            except Exception as e:
+                print(f'Exception: {e}', end=' | ')
+                pass
+            print('Error processing input, please try again..')
         cardPlayed = str(self.availableCards[idx]).strip()
         return self.hand.pop(self._handIndex[cardPlayed])
 
