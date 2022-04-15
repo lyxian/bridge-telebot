@@ -130,7 +130,8 @@ class Bot(PlayerBase):
         bidStrength = Deck.showStrength(handBySuit[bestSuit]) + strengthIncrease
 
         wildBid = bidStrength % 4 >= sample(range(1,5), k=1)[0]
-        minBid = bidStrength // 4 + wildBid
+        maxBid = bidStrength // 4 + wildBid
+        minBid = min(game.currentBid.number, maxBid) if game.currentBid else 1
 
         bidObj = Bid(minBid, bestSuit)
         self.likelyPartner = likelyPartner
