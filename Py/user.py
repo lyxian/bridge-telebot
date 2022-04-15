@@ -11,7 +11,7 @@ class Game():
         self.currentBidder = None
         self.biddingTeam = None
         self.otherTeam = None
-        # check no trump first round
+        self.brokeTrump = False
 
     @property
     def _results(self):
@@ -64,6 +64,8 @@ class Game():
         self.playedCards = []
 
     def addRoundCards(self, card):
+        if not self.brokeTrump and card.isTrump:
+            self.brokeTrump = True
         self.playedCards.append(card)
 
     def startBidding(self):
@@ -150,8 +152,8 @@ class Bot(PlayerBase):
         if self.canFollow(game):
             self.availableCards = [_ for _ in self.hand if _.suit == game.roundSuit]
         else:
-            if game.roundCount == 1:
-                print('No trump allowed')
+            if game.roundCount == 1 or not game.brokeTrump:
+                # print('No trump allowed')
                 self.availableCards = [_ for _ in self.hand if _.suit != game.trump]
             else:
                 self.availableCards = self.hand
@@ -199,8 +201,8 @@ class Player(PlayerBase):
         if self.canFollow(game):
             self.availableCards = [_ for _ in self.hand if _.suit == game.roundSuit]
         else:
-            if game.roundCount == 1:
-                print('No trump allowed')
+            if game.roundCount == 1 or not game.brokeTrump:
+                # print('No trump allowed')
                 self.availableCards = [_ for _ in self.hand if _.suit != game.trump]
             else:
                 self.availableCards = self.hand
