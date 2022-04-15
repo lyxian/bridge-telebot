@@ -19,6 +19,11 @@ def play(game, firstPlayer):
                     print('None')
             playedCard = player.play(game)
             game.addRoundCards(playedCard)
+            if playedCard == game.currentBidder.likelyPartner:
+                print('*******************************')
+                game.currentBidder.partner = playedCard.owner
+                game.otherTeam[0].partner = game.otherTeam[1]
+                game.otherTeam[1].partner = game.otherTeam[0]
             if game.roundSuit is None:
                 game.setRoundSuit(count+1, playedCard.suit)
                 deck._setRoundRules(game)
