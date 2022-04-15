@@ -158,7 +158,7 @@ class Bot(PlayerBase):
         if self.canFollow(game):
             self.availableCards = [_ for _ in self.hand if _.suit == game.roundSuit]
         else:
-            if game.roundCount == 1 or not game.brokeTrump:
+            if game.roundCount == 1 or (not game.brokeTrump and not game.playedCards):
                 # print('No trump allowed')
                 self.availableCards = [_ for _ in self.hand if _.suit != game.trump]
             else:
