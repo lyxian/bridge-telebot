@@ -140,7 +140,7 @@ class Bot(PlayerBase):
             return Bid(minBid, bestSuit)
         else:
             if Bid(maxBid, bestSuit) < game.currentBid or game.currentBid.suit == bestSuit:
-                return 'pass'
+                return 'Pass'
             else:
                 bidObj = Bid(minBid, bestSuit)
                 while bidObj <= game.currentBid:
@@ -193,16 +193,16 @@ class Player(PlayerBase):
     def bid(self, game):
         print(Deck.showBySuitStr(self.hand))
         minBid = input('Enter min. bid: ')
-        if minBid == 'pass':
+        if minBid == 'Pass':
             return minBid
         bestSuit = input('Enter suit: ')
-        if bestSuit == 'pass':
+        if bestSuit == 'Pass':
             return bestSuit
         bidObj = Bid(int(minBid), bestSuit)
         if game.currentBid is None or game.currentBid < bidObj:
             return bidObj
         else:
-            return 'pass'
+            return 'Pass'
 
     def play(self, game):
         if self.canFollow(game):

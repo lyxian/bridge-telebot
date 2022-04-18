@@ -41,7 +41,11 @@ cardMappings = {
     'club': '♣',
     'diamond': '♦',
     'heart': '♥',
-    'spade': '♠'
+    'spade': '♠',
+    '♣': 'club',
+    '♦': 'diamond',
+    '♥': 'heart',
+    '♠': 'spade'
 }
 
 cardStrength = {

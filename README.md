@@ -60,6 +60,8 @@
 
 # Telegram
 
+- init
+  - install telegram bot packages and python scripts
 - main menu
   - /start_game
 - bidding
@@ -105,5 +107,7 @@
 - bot starts with bad lowest card
 
 ##Packages (list required packages & run .scripts/python-pip.sh)
-
+PyTelegramBotAPI
+cryptography
+flask
 ##Packages
