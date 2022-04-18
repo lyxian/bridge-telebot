@@ -303,7 +303,7 @@ def createBot():
                 if player.canFollow(game):
                     player.availableCards = [_ for _ in player.hand if _.suit == game.roundSuit]
                 else:
-                    if game.roundCount == 1 or not game.brokeTrump:
+                    if game.roundCount == 1 or (not game.brokeTrump and not game.playedCards):
                         # print('No trump allowed')
                         player.availableCards = [_ for _ in player.hand if _.suit != game.trump]
                     else:
@@ -340,8 +340,9 @@ def createBot():
         game = db[message.chat.id]['game']
         deck = db[message.chat.id]['deck']
         user = db[message.chat.id]['player']
-        firstPlayer = game.getPlayerOrder(game.currentBidder)[1]
-        playerOrder = game.getPlayerOrder(firstPlayer)
+        # firstPlayer = game.getPlayerOrder(game.currentBidder)[1]
+        # playerOrder = game.getPlayerOrder(firstPlayer)
+        count = db[message.chat.id]['count']
 
         playedCard = user.hand.pop(user._handIndex[message.text])
         game.addRoundCards(playedCard)
@@ -351,7 +352,7 @@ def createBot():
             game.otherTeam[0].partner = game.otherTeam[1]
             game.otherTeam[1].partner = game.otherTeam[0]
         if game.roundSuit is None:
-            game.setRoundSuit(count+1, playedCard.suit)
+            game.setRoundSuit(count, playedCard.suit)
             deck._setRoundRules(game)
 
         if len(game.playedCards) == 4:
@@ -361,8 +362,8 @@ def createBot():
             bot.send_message(message.chat.id, f'{winningCard.owner.name} wins with {winningCard}\n')
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
-
-        if db[message.chat.id]['remainingPlayers']:
+            playerOrder = game.getPlayerOrder(firstPlayer)
+        else: #if db[message.chat.id]['remainingPlayers']:
             for player in db[message.chat.id]['remainingPlayers']:
                 playedCard = player.play(game)
                 game.addRoundCards(playedCard)
@@ -372,23 +373,17 @@ def createBot():
                     game.otherTeam[0].partner = game.otherTeam[1]
                     game.otherTeam[1].partner = game.otherTeam[0]
                 if game.roundSuit is None:
-                    game.setRoundSuit(count+1, playedCard.suit)
+                    game.setRoundSuit(count, playedCard.suit)
                     deck._setRoundRules(game)
-            if len(game.playedCards) == 4:
-                winningCard = sorted(game.playedCards, reverse=True)[0]
-                text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
-                bot.send_message(message.chat.id, f'{text}')
-                bot.send_message(message.chat.id, f'{winningCard.owner.name} wins with {winningCard}\n')
-                firstPlayer = winningCard.owner
-                firstPlayer.tricks += 1
-                firstPlayer = game.getPlayerOrder(game.currentBidder)[1]
-                playerOrder = game.getPlayerOrder(firstPlayer)
+            winningCard = sorted(game.playedCards, reverse=True)[0]
+            text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
+            bot.send_message(message.chat.id, f'{text}')
+            bot.send_message(message.chat.id, f'{winningCard.owner.name} wins with {winningCard}\n')
+            firstPlayer = winningCard.owner
+            firstPlayer.tricks += 1
+            playerOrder = game.getPlayerOrder(firstPlayer)
 
-        if 'count' in db[message.chat.id].keys():
-            db[message.chat.id]['count'] += 1
-        else:
-            db[message.chat.id]['count'] = 1
-        
+        db[message.chat.id]['count'] += 1
         count = db[message.chat.id]['count']
         if count > 13:
             bot.send_message(message.chat.id, f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}')
@@ -412,7 +407,7 @@ def createBot():
                     if player.canFollow(game):
                         player.availableCards = [_ for _ in player.hand if _.suit == game.roundSuit]
                     else:
-                        if game.roundCount == 1 or not game.brokeTrump:
+                        if game.roundCount == 1 or (not game.brokeTrump and not game.playedCards):
                             # print('No trump allowed')
                             player.availableCards = [_ for _ in player.hand if _.suit != game.trump]
                         else:
@@ -435,13 +430,6 @@ def createBot():
                     if game.roundSuit is None:
                         game.setRoundSuit(count+1, playedCard.suit)
                         deck._setRoundRules(game)
-            if len(game.playedCards) == 4:
-                winningCard = sorted(game.playedCards, reverse=True)[0]
-                text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
-                bot.send_message(message.chat.id, f'{text}')
-                bot.send_message(message.chat.id, f'{winningCard.owner.name} wins with {winningCard}\n')
-                firstPlayer = winningCard.owner
-                firstPlayer.tricks += 1
 
     def createMarkupBid():
         markup = ReplyKeyboardMarkup(row_width=5)
