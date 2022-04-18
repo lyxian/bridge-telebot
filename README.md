@@ -51,10 +51,21 @@
 1. bot feed partner
 2. dump least suit
 3. all bots know breakTrump suit
+4. handle input errors (bidding, partner)
+5. playing non-lowest first card of round
 
 **v2** (ongoing)
 
 1. port to telegram
+
+# Telegram
+
+- main menu
+  - /start_game
+- bidding
+  - 1,2,3,more (row-wise)
+- playing
+  - think of grid for all possible number of cards
 
 # AI Programming
 
@@ -87,8 +98,11 @@
   - win
     - eat enemy/unsure
     - use highest / lowest trump
-- feedback
-  - if second last player, should play middle higher card
+
+**Feedback**
+
+- if second last player, should play middle higher card
+- bot starts with bad lowest card
 
 ##Packages (list required packages & run .scripts/python-pip.sh)
 

@@ -65,6 +65,7 @@ class Game():
 
     def addRoundCards(self, card):
         if not self.brokeTrump and card.isTrump:
+            print('***Trump Broke***')
             self.brokeTrump = True
         self.playedCards.append(card)
 
