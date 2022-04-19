@@ -6,7 +6,7 @@ import time
 import os
 import re
 
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from card import Bid, Deck, cardMappings
 from user import Game, Player, Bot
 
@@ -223,12 +223,9 @@ def createBot():
                 winningBidder = player
                 if isinstance(winningBidder, Player):
                     bot.send_message(message.chat.id, f'Your Hand: {Deck.showBySuitStr(winningBidder.hand)}')
-                    #
-                    # TODO
-                    #
-                    rank, suit = 'ace spade'.split()
-                    # rank, suit = input('Enter partner (eg. "ace spade"): ').split()
-                    winningBidder.setLikelyPartner([card for card in game.deck.deck if card.rank == rank and card.suit == suit][0])
+                    bot.send_message(message.chat.id, f'Choose Partner: ', reply_markup=ReplyKeyboardRemove())
+                    db[message.chat.id]['playerTurn'] = True
+                    break
                 bot.send_message(message.chat.id, 'DONE BIDDING')
                 # ==Post-Bidding==
                 trump = game.currentBid.suit
@@ -272,6 +269,38 @@ def createBot():
         # db[message.chat.id]['playerOrder'] = playerOrder
         # telebot.logger.debug(message)
         return '', 200
+
+    def checkPartner(message):
+        text = message.text
+        if 'playerTurn' in db[message.chat.id].keys():
+            if db[message.chat.id]['playerTurn']:
+                db[message.chat.id]['playerTurn'] = False
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    @bot.message_handler(func=lambda message: checkPartner(message))
+    def _replyPlayerPartner(message):
+        game = db[message.chat.id]['game']
+        deck = db[message.chat.id]['deck']
+        winningBidder = db[message.chat.id]['player']
+
+        rank, suit = message.text.lower().split()
+        winningBidder.setLikelyPartner([card for card in deck.deck if card.rank == rank and card.suit == suit][0])
+        bot.send_message(message.chat.id, 'DONE BIDDING')
+        # ==Post-Bidding==
+        trump = game.currentBid.suit
+        game.setTrump(trump)
+        deck._setGameRules(game)
+        db[message.chat.id]['continueBidding'] = False
+        db[message.chat.id]['firstPlayer'] = game.getPlayerOrder(winningBidder)[1]    
+        telebot.logging.debug(db[message.chat.id]['remainingPlayers'])
+        db[message.chat.id]['remainingPlayers'] = None
+
+        bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+        startPlay(message)
 
     def startPlay(message):
         # ==Playing==
@@ -386,7 +415,7 @@ def createBot():
         db[message.chat.id]['count'] += 1
         count = db[message.chat.id]['count']
         if count > 13:
-            bot.send_message(message.chat.id, f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}')
+            bot.send_message(message.chat.id, f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}', reply_markup=ReplyKeyboardRemove())
         else:
             playerOrder = game.getPlayerOrder(firstPlayer)
             game.setRoundSuit(count)
@@ -434,7 +463,7 @@ def createBot():
     def createMarkupBid():
         markup = ReplyKeyboardMarkup(row_width=5)
         # Add Numbers
-        for i in range(3):
+        for i in range(4):
             markup.add(
                 *[KeyboardButton(f'{i+1}{suit}') for suit in ['♣', '♦', '♥', '♠', 'NT']]
             )
