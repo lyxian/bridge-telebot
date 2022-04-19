@@ -76,6 +76,15 @@
     - commands
       - show current tricks count
     - check if player bid valid
+    - allow no trump
+      - for user
+      - for bots
+    - check out selective replyMarkup
+      - send to cards to players
+      - navigate using replyMarkup
+    - integrate cloud DB
+    - hand arrangement
+      - column-wise
 
 # AI Programming
 
