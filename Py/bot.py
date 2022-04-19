@@ -32,6 +32,15 @@ def callTelegramAPI(method, params):
     print(response.json())
     return response
 
+def createEmptyBot():
+    TOKEN = getToken()
+    bot = telebot.TeleBot(token=TOKEN)
+
+    @bot.message_handler(func=lambda message: True)
+    def _start(message):
+        return
+    return bot
+
 def createBot():
     TOKEN = getToken()
 
