@@ -23,6 +23,7 @@ class Suit(Enum):
     diamond = 2
     heart = 3
     spade = 4
+    notrump = 5
 
 cardMappings = {
     'ace': 'A',
@@ -42,10 +43,12 @@ cardMappings = {
     'diamond': '♦',
     'heart': '♥',
     'spade': '♠',
+    'notrump': 'NT',
     '♣': 'club',
     '♦': 'diamond',
     '♥': 'heart',
-    '♠': 'spade'
+    '♠': 'spade',
+    'NT': 'notrump'
 }
 
 cardStrength = {
@@ -113,7 +116,7 @@ class Card:
 class Deck:
 
     def __init__(self):
-        self.deck = [Card(i,j) for i in range(1,1+len(Rank._member_names_)) for j in range(1,1+len(Suit._member_names_))]
+        self.deck = [Card(i,j) for i in range(1,1+len(Rank._member_names_)) for j in range(1,len(Suit._member_names_))]
         
     @property
     def _shuffle(self):
@@ -146,11 +149,13 @@ class Deck:
 
     @staticmethod
     def showBySuit(cards):
-        return {suit: [card for card in cards if card.suit == suit] for suit in Suit._member_names_}
+        suits = Suit._member_names_[:4]
+        return {suit: [card for card in cards if card.suit == suit] for suit in suits}
 
     @staticmethod
     def showBySuitStr(cards):
-        return {suit: [str(card) for card in cards if card.suit == suit] for suit in Suit._member_names_}
+        suits = Suit._member_names_[:4]
+        return {suit: [str(card) for card in cards if card.suit == suit] for suit in suits}
 
     @staticmethod
     def showStrength(cards):
@@ -159,7 +164,8 @@ class Deck:
 
     @staticmethod
     def showSuitStrength(cards):
-        return {suit: Deck.showStrength([card for card in cards if card.suit == suit]) for suit in Suit._member_names_}
+        suits = Suit._member_names_[:4]
+        return {suit: Deck.showStrength([card for card in cards if card.suit == suit]) for suit in suits}
 
     @staticmethod
     def showLikelyPartner(cards, deck):

@@ -2,7 +2,7 @@ from flask import Flask, request
 import telebot
 import os
 
-from bot import createBot
+from bot import createBot, createEmptyBot
 
 DEBUG_MODE = True
 
