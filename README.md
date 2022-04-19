@@ -68,6 +68,14 @@
   - 1,2,3,more (row-wise)
 - playing
   - think of grid for all possible number of cards
+- comments
+  - to improve
+    - choose partner
+      - use keyboard
+      - type `<rank> <suit>`
+    - commands
+      - show current tricks count
+    - check if player bid valid
 
 # AI Programming
 
@@ -105,6 +113,7 @@
 
 - if second last player, should play middle higher card
 - bot starts with bad lowest card
+- partner after bidder, plays too low card
 
 ##Packages (list required packages & run .scripts/python-pip.sh)
 PyTelegramBotAPI
