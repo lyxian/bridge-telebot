@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from random import sample
+from re import X
 from card import Bid, Card, Deck, Rank, Suit
 
 class Game():
@@ -12,6 +13,8 @@ class Game():
         self.biddingTeam = None
         self.otherTeam = None
         self.brokeTrump = False
+        self.roundCount = None
+        self.roundSuit = None
 
     @property
     def _results(self):
@@ -71,6 +74,24 @@ class Game():
 
     def startBidding(self):
         pass
+
+    @staticmethod
+    def savePlayers(players):
+        return [{k:(Deck.saveCards(v) if k in ['hand', 'availableCards', 'likelyPartner'] else v.name if (k == 'partner' and v)  else v) for k,v in vars(player).items()} for player in players]
+
+    @staticmethod
+    def saveGame(game):
+        return {
+            'deck': Deck.saveCards(game.deck.deck),
+            'players': Game.savePlayers(game.players),
+            'currentBid': game.currentBid,
+            'currentBidder': game.currentBidder.name,
+            'biddingTeam': Game.savePlayers(game.biddingTeam),
+            'otherTeam': Game.savePlayers(game.otherTeam),
+            'brokeTrump': game.brokeTrump,
+            'roundCount': game.roundCount,
+            'roundSuit': game.roundSuit 
+        }
 
 class PlayerBase(ABC):
     

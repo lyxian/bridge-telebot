@@ -192,5 +192,16 @@ class Deck:
     def getLowestCard(cards):
         return sorted(cards)[0]
 
+    @staticmethod
+    def saveCards(cards):
+        if isinstance(cards, list):
+            return [
+                {
+                    k: (v.name if k == 'owner' else v) for k,v in vars(card).items()
+                } for card in cards
+            ]
+        else:
+            {k: (v.name if k == 'owner' else v) for k,v in vars(cards).items()}
+
 if __name__ == '__main__':
     pass

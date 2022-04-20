@@ -126,6 +126,9 @@
 - save state
   - init from string for:
     - <card>, <player>
+  - how to save state
+- steps :
+  - create deck
 
 # AI Programming
 
