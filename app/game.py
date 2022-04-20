@@ -67,7 +67,7 @@ while continueBidding:
             game.askPlayer(player)
             break
         bid = player.bid(game)
-        if bid == 'pass':
+        if bid == 'Pass':
             skippedPlayers.append(player)
             print(f'{player.name} passed\n')
         else:
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     # print(Deck.showStrength(A.hand))
     # print(Deck.showSuitStrength(A.hand))
     # print(A._bestSuit, B._bestSuit, C._bestSuit, D._bestSuit)
-
+    
     # print(Deck.showSuitStrength(A.hand), Deck.showStrength(A.hand), '\n', Deck.showBySuitStr(A.hand))
     # print()
     # print(Deck.showSuitStrength(B.hand), Deck.showStrength(B.hand), '\n', Deck.showBySuitStr(B.hand))
@@ -116,3 +116,11 @@ if __name__ == '__main__':
     # print()
     # print(Deck.showSuitStrength(D.hand), Deck.showStrength(D.hand), '\n', Deck.showBySuitStr(D.hand))
     # print()
+    print(f'Game: {vars(game)}')
+    print()
+    print(f'Deck: {vars(deck)}')
+    print()
+    print(f'A: {vars(A)}')
+    print()
+    print(f'B: {vars(B)}')
+    print()

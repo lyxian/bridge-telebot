@@ -49,6 +49,16 @@ def createBot():
 
     @bot.message_handler(commands=["start"])
     def _start(message):
+        text = "Welcome to Bridge-Telebot! ☺ Here are the list of commands to get you started:\n/startGame - Start new game\n/quitGame - Quit existing game"
+        bot.send_message(message.chat.id, text)
+        pass
+
+    @bot.message_handler(commands=["quitGame"])
+    def _quitGame(message):
+        pass
+
+    @bot.message_handler(commands=["startGame"])
+    def _startGame(message):
         # ===Game Start===
         deck = Deck()
         deck._shuffle

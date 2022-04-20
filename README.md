@@ -86,8 +86,46 @@
       - send to cards to players
       - navigate using replyMarkup
     - integrate cloud DB
+      - think of ways to persist Py objects
+        - need to serialize objects
+        - re-init from strings
     - hand arrangement
       - column-wise
+
+# MongoDB
+
+- persist Py objects / save state / snapshot
+  - <player>/<bot>
+    - name
+    - hand <card>s
+    - partner <player>
+    - tricks
+    - availableCards <card>s
+    - likelyParter <card>
+  - <game>
+    - deck <deck>
+    - players <player/bot>s
+    - currentBid <bid>
+    - currentBidder <player/bot>
+    - biddingTeam <player/bot>s
+    - otherTeam <player/bot>s
+    - brokeTrump
+    - trump
+    - roundCount
+    - roundSuit
+    - playedCards <card>s
+  - <deck>
+    - deck <card>s
+  - <card>
+    - rank
+    - suit
+    - isTrump
+    - isRoundSuit
+    - strength
+    - owner <player>
+- save state
+  - init from string for:
+    - <card>, <player>
 
 # AI Programming
 
