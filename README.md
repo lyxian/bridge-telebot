@@ -57,6 +57,9 @@
 **v2** (ongoing)
 
 1. port to telegram
+2. mongoDB integration
+3. no trump bot plays
+4. improved UI to choose partner
 
 # Telegram
 
@@ -77,7 +80,7 @@
       - show current tricks count
     - check if player bid valid
     - allow no trump
-      - for user
+      > for user
       - for bots
     - check out selective replyMarkup
       - send to cards to players
@@ -128,4 +131,7 @@
 PyTelegramBotAPI
 cryptography
 flask
+pyyaml
+pymongo
+dnspython
 ##Packages

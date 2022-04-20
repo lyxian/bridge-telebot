@@ -1,0 +1,10 @@
+# v1
+
+query:
+  database: bridge-telebot
+  collection: players
+application:
+  name: bridge-telebot
+  database:
+    port: 27017
+    username: lyxian
