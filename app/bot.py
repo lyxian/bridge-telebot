@@ -7,7 +7,7 @@ import os
 import re
 
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
-from card import Bid, Deck, cardMappings
+from card import Bid, Card, Deck, Rank, Suit, cardMappings
 from user import Game, Player, Bot
 
 # Commands
@@ -73,6 +73,9 @@ def createBot():
             'players': players,
             'playerOrder': playerOrder,
             'continueBidding': True,
+            'choosePartnerSuit': False,
+            'choosePartnerRank': False,
+            'winningBidder': None,
             'player': A
         }
             
@@ -84,12 +87,14 @@ def createBot():
             if game.currentBidder and game.currentBidder == player:
                 continueBidding = False
                 winningBidder = player
+                db[message.chat.id]['winningBidder'] = player
                 if isinstance(winningBidder, Player):
                     bot.send_message(message.chat.id, f'Your Hand: {Deck.showBySuitStr(winningBidder.hand)}')
-                    # print(f'Your Hand: {Deck.showBySuitStr(winningBidder.hand)}')
-                    rank, suit = 'ace spade'.split()
-                    # rank, suit = input('Enter partner (eg. "ace spade"): ').split()
-                    winningBidder.setLikelyPartner([card for card in game.deck.deck if card.rank == rank and card.suit == suit][0])
+                    if 1:
+                        rank, suit = 'ace spade'.split()
+                    else:
+                        bot.send_message(message.chat.id, f'Choose partner suit: ', reply_markup=createMarkupSuits())
+                        db[message.chat.id]['choosePartnerSuit'] = True
                 break
             if isinstance(player, Player):
                 bot.send_message(message.chat.id, f'Your Hand: {Deck.showBySuitStr(player.hand)}', reply_markup=createMarkupBid())
@@ -114,6 +119,56 @@ def createBot():
                 game.currentBidder = player
                 bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
                 # telebot.logger.debug(f'Current bid by {player.name} is: {bid}\n')
+
+    def checkPartnerSuit(message):
+        if db[message.chat.id]['choosePartnerSuit']:
+            db[message.chat.id]['choosePartnerSuit'] = False
+            return True
+        else:
+            return False
+
+    @bot.message_handler(func=lambda message: checkPartnerSuit(message))
+    def _replyPartnerSuit(message):
+        db[message.chat.id]['partnerSuit'] = message.text
+        db[message.chat.id]['choosePartnerRank'] = True
+        bot.send_message(message.chat.id, f'Choose partner rank: ', reply_markup=createMarkupRanks())
+
+    def checkPartnerRank(message):
+        if db[message.chat.id]['choosePartnerRank']:
+            db[message.chat.id]['choosePartnerRank'] = False
+            return True
+        else:
+            return False
+            
+    @bot.message_handler(func=lambda message: checkPartnerRank(message))
+    def _replyPartnerRank(message):
+        db[message.chat.id]['partnerRank'] = message.text
+        # Create card object
+        game = db[message.chat.id]['game']
+        deck = db[message.chat.id]['deck']
+        rank = db[message.chat.id]['partnerRank']
+        suit = db[message.chat.id]['partnerSuit']
+        winningBidder = db[message.chat.id]['winningBidder']
+
+        # Check if card in hands
+        if len([card for card in db[message.chat.id]['winningBidder'].hand if card.rank == rank and card.suit == suit]):
+            bot.send_message(message.chat.id, f'Partner card found in own hand, please select partner again.\nChoose partner rank: ', reply_markup=createMarkupRanks())
+            db[message.chat.id]['choosePartnerSuit'] = True
+            # telebot.logging(f'Partner card found in own hand, please select partner again')
+        else:
+            winningBidder.setLikelyPartner([card for card in game.deck.deck if card.rank == rank and card.suit == suit][0])
+            bot.send_message(message.chat.id, 'DONE BIDDING')
+            # ==Post-Bidding==
+            trump = game.currentBid.suit
+            game.setTrump(trump)
+            deck._setGameRules(game)
+            db[message.chat.id]['continueBidding'] = False
+            db[message.chat.id]['firstPlayer'] = game.getPlayerOrder(winningBidder)[1]    
+            telebot.logging.debug(db[message.chat.id]['remainingPlayers'])
+            db[message.chat.id]['remainingPlayers'] = None
+
+            bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+            startPlay(message)
 
     def checkBid(message):
         text = message.text
@@ -204,10 +259,15 @@ def createBot():
             return '', 200
             # telebot.logger.debug(f'{player.name} passed\n')
         else:
+            # Validate bid
             bid = Bid(int(text[0]), cardMappings[text[1:]])
-            game.currentBid = bid
-            game.currentBidder = user
-            bot.send_message(message.chat.id, f'Current bid by {user.name} is: {bid}\n')
+            if game.currentBid is None or game.currentBid < bid:
+                game.currentBid = bid
+                game.currentBidder = user
+                bot.send_message(message.chat.id, f'Current bid by {user.name} is: {bid}\n')
+            else: # if invalid, ask again
+                bot.send_message(message.chat.id, f'You have entered an invalid bid, please try again.\nYour Hand: {Deck.showBySuitStr(player.hand)}', reply_markup=createMarkupBid())
+                return
 
         # Let remaining players bid for current round
         skippedPlayers = []
@@ -232,8 +292,13 @@ def createBot():
                 winningBidder = player
                 if isinstance(winningBidder, Player):
                     bot.send_message(message.chat.id, f'Your Hand: {Deck.showBySuitStr(winningBidder.hand)}')
-                    bot.send_message(message.chat.id, f'Choose Partner: ', reply_markup=ReplyKeyboardRemove())
-                    db[message.chat.id]['playerTurn'] = True
+                    if 0:
+                        bot.send_message(message.chat.id, f'Choose Partner: ', reply_markup=ReplyKeyboardRemove())
+                        db[message.chat.id]['playerTurn'] = True
+                    else:
+                        db[message.chat.id]['continueBidding'] = continueBidding
+                        db[message.chat.id]['choosePartnerSuit'] = True
+                        bot.send_message(message.chat.id, f'Choose partner suit: ', reply_markup=createMarkupSuits())
                     break
                 bot.send_message(message.chat.id, 'DONE BIDDING')
                 # ==Post-Bidding==
@@ -514,6 +579,36 @@ def createBot():
                 *[KeyboardButton(str(cards[i+sum(grid[:count])]).strip()) for i in range(row)]
             )
             count += 1
+        return markup
+
+    def createMarkupSuits():
+        markup = ReplyKeyboardMarkup(row_width=2)
+        suits = Suit._member_names_[3::-1]
+        grid = [2,2]
+        count = 0
+        for row in grid:
+            markup.add(
+                *[KeyboardButton(f'{suits[count]}') for i in range(row)]
+            )
+            count += 1
+        markup.add(
+            KeyboardButton('Back'), KeyboardButton('Your Cards')
+        )
+        return markup
+
+    def createMarkupRanks():
+        markup = ReplyKeyboardMarkup(row_width=4)
+        ranks = Rank._member_names_
+        grid = [4,3,3,3]
+        count = 0
+        for row in grid:
+            markup.add(
+                *[KeyboardButton(f'{ranks[count]}') for i in range(row)]
+            )
+            count += 1
+        markup.add(
+            KeyboardButton('Back'), KeyboardButton('Your Cards')
+        )
         return markup
 
     return bot
