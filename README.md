@@ -64,6 +64,7 @@
 6. improve message handling (ok)
 7. clean up code
 8. main func to check which handler to trigger
+9. handle player bidder
 
 # Telegram
 
