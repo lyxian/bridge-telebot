@@ -51,14 +51,15 @@ def createBot():
     def _start(message):
         text = 'Welcome to Bridge-Telebot! ☺ Here are the list of commands to get you started:'
         text += '\n/startgame - Start new game'
-        # text += '\n/quitGame - Quit existing game'
-        bot.send_message(message.chat.id, text)
+        text += '\n/quitgame - Quit existing game'
+        bot.send_message(message.chat.id, text, reply_markup=ReplyKeyboardRemove())
         db[message.chat.id] = {}
         return
 
     @bot.message_handler(commands=["quitgame"])
     def _quitGame(message):
         db[message.chat.id] = {}
+        bot.send_message(message.chat.id, 'OK', reply_markup=ReplyKeyboardRemove())
         return
 
     @bot.message_handler(commands=["startgame"])
@@ -545,7 +546,7 @@ def createBot():
 
         db[message.chat.id]['count'] += 1
         count = db[message.chat.id]['count']
-        if count > 13:
+        if count >= 13:
             bot.send_message(message.chat.id, f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}', reply_markup=ReplyKeyboardRemove())
         else:
             playerOrder = game.getPlayerOrder(firstPlayer)
