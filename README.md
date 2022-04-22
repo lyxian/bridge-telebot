@@ -59,7 +59,11 @@
 1. port to telegram
 2. mongoDB integration
 3. no trump bot plays
-4. improved UI to choose partner
+4. improve UI to choose partner
+5. validate bids
+6. better message handling
+7. clean up code
+8. main func to check which handler to trigger
 
 # Telegram
 
