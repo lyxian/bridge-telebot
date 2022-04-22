@@ -49,6 +49,18 @@ def createBot():
 
     @bot.message_handler(commands=["start"])
     def _start(message):
+        text = 'Welcome to Bridge-Telebot! ☺ Here are the list of commands to get you started:'
+        text += '\n/startGame - Start new game'
+        # text += '\n/quitGame - Quit existing game'
+        bot.send_message(message.chat.id, text)
+        pass
+
+    @bot.message_handler(commands=["quitGame"])
+    def _quitGame(message):
+        pass
+
+    @bot.message_handler(commands=["startGame"])
+    def _startGame(message):
         # ===Game Start===
         deck = Deck()
         deck._shuffle
@@ -159,7 +171,6 @@ def createBot():
             # telebot.logging(f'Partner card found in own hand, please select partner again')
         else:
             winningBidder.setLikelyPartner([card for card in game.deck.deck if card.rank == rank and card.suit == suit][0])
-            bot.send_message(message.chat.id, 'DONE BIDDING')
             # ==Post-Bidding==
             trump = game.currentBid.suit
             game.setTrump(trump)
@@ -186,6 +197,9 @@ def createBot():
 
     @bot.message_handler(func=lambda message: checkBid(message))
     def _replyBid(message):
+        bot.delete_message(message.chat.id, message.id-1)
+        bot.delete_message(message.chat.id, message.id)
+
         game = db[message.chat.id]['game']
         deck = db[message.chat.id]['deck']
         user = db[message.chat.id]['player']
@@ -198,13 +212,9 @@ def createBot():
         skippedPlayers = []
         if text == 'Your Cards':
             # bot.edit_message_reply_markup(chat_id=message.chat.id, message_id=message.id-1, reply_markup=createMarkupHand(user.hand))
-            bot.delete_message(message.chat.id, message.id-1)
-            bot.delete_message(message.chat.id, message.id)
             bot.send_message(message.chat.id, 'Your Cards', reply_markup=createMarkupHand(user.hand))
             return
         elif text == 'Back':
-            bot.delete_message(message.chat.id, message.id-1)
-            bot.delete_message(message.chat.id, message.id)
             bot.send_message(message.chat.id, f'Choose bid: ', reply_markup=createMarkupBid())
             return
         elif text == 'Pass':
@@ -254,7 +264,6 @@ def createBot():
                         playerOrder.pop(playerOrder.index(player))
                 time.sleep(1)
                 
-            bot.send_message(message.chat.id, 'DONE BIDDING')
             # ==Post-Bidding==
             trump = game.currentBid.suit
             game.setTrump(trump)
@@ -314,7 +323,6 @@ def createBot():
                         db[message.chat.id]['choosePartnerSuit'] = True
                         bot.send_message(message.chat.id, f'Choose partner suit: ', reply_markup=createMarkupSuits())
                     break
-                bot.send_message(message.chat.id, 'DONE BIDDING')
                 # ==Post-Bidding==
                 trump = game.currentBid.suit
                 game.setTrump(trump)
@@ -378,7 +386,6 @@ def createBot():
 
         rank, suit = message.text.lower().split()
         winningBidder.setLikelyPartner([card for card in deck.deck if card.rank == rank and card.suit == suit][0])
-        bot.send_message(message.chat.id, 'DONE BIDDING')
         # ==Post-Bidding==
         trump = game.currentBid.suit
         game.setTrump(trump)
@@ -410,12 +417,12 @@ def createBot():
             if isinstance(player, Player):
                 playerMessage = ''
                 if game.roundSuit:
-                    playerMessage += f'Round Suit: {game.roundSuit} || '
+                    playerMessage += f'Round Suit: {game.roundSuit}\n'
                 # print('Played Cards: ', end='')
                 if game.playedCards:
                     playerMessage += ', '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
                 else:
-                    playerMessage += 'None'
+                    playerMessage += f'{player.name} plays first'
                 bot.send_message(message.chat.id, f'{playerMessage}')
 
                 if player.canFollow(game):
@@ -454,6 +461,8 @@ def createBot():
 
     @bot.message_handler(func=lambda message: checkPlay(message))
     def _replyPlay(message):
+        bot.delete_message(message.chat.id, message.id-1)
+        bot.delete_message(message.chat.id, message.id)
         # ==Playing==
         game = db[message.chat.id]['game']
         deck = db[message.chat.id]['deck']
@@ -476,8 +485,8 @@ def createBot():
         if len(game.playedCards) == 4:
             winningCard = sorted(game.playedCards, reverse=True)[0]
             text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
-            bot.send_message(message.chat.id, f'{text}')
-            bot.send_message(message.chat.id, f'{winningCard.owner.name} wins with {winningCard}\n')
+            bot.edit_message_text(f'Round Suit: {game.roundSuit}\n{text}\n<b>{winningCard.owner.name} wins with {winningCard}</b>', message.chat.id, message.id-2, parse_mode='html')
+            # bot.send_message(message.chat.id, f'Round Suit: {game.roundSuit}\n{text}\n**{winningCard.owner.name} wins with {winningCard}**')
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
@@ -495,8 +504,8 @@ def createBot():
                     deck._setRoundRules(game)
             winningCard = sorted(game.playedCards, reverse=True)[0]
             text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
-            bot.send_message(message.chat.id, f'{text}')
-            bot.send_message(message.chat.id, f'{winningCard.owner.name} wins with {winningCard}\n')
+            bot.edit_message_text(f'Round Suit: {game.roundSuit}\n{text}\n<b>{winningCard.owner.name} wins with {winningCard}</b>', message.chat.id, message.id-2, parse_mode='html')
+            # bot.send_message(message.chat.id, f'{text}\n{winningCard.owner.name} wins with {winningCard}')
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
@@ -514,12 +523,12 @@ def createBot():
                 if isinstance(player, Player):
                     playerMessage = ''
                     if game.roundSuit:
-                        playerMessage += f'Round Suit: {game.roundSuit} || '
+                        playerMessage += f'Round Suit: {game.roundSuit}\n'
                     # print('Played Cards: ', end='')
                     if game.playedCards:
                         playerMessage += ', '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
                     else:
-                        playerMessage += 'None'
+                        playerMessage += f'{player.name} plays first'
                     bot.send_message(message.chat.id, f'{playerMessage}')
 
                     if player.canFollow(game):
