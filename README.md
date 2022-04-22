@@ -62,6 +62,8 @@
 4. improve UI to choose partner
 5. validate bids
 6. better message handling
+7. clean up code
+8. main func to check which handler to trigger
 
 # Telegram
 

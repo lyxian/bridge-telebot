@@ -39,6 +39,19 @@ cardMappings = {
     'jack': 'J',
     'queen': 'Q',
     'king': 'K',
+    'A': 'ace',
+    '2': 'two',
+    '3': 'three',
+    '4': 'four',
+    '5': 'five',
+    '6': 'six',
+    '7': 'seven',
+    '8': 'eight',
+    '9': 'nine',
+    '10': 'ten',
+    'J': 'jack',
+    'Q': 'queen',
+    'K': 'king',
     'club': '♣',
     'diamond': '♦',
     'heart': '♥',
@@ -150,7 +163,7 @@ class Deck:
     @staticmethod
     def showBySuit(cards):
         suits = Suit._member_names_[:4]
-        return {suit: [card for card in cards if card.suit == suit] for suit in suits}
+        return {suit: [card for card in cards if card.suit == suit][::-1] for suit in suits}
 
     @staticmethod
     def showBySuitStr(cards):
