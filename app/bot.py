@@ -432,7 +432,7 @@ def createBot():
         firstPlayer = game.getPlayerOrder(game.currentBidder)[1]
         playerOrder = game.getPlayerOrder(firstPlayer)
 
-        count = 1
+        count = 0
         db[message.chat.id]['count'] = count
             
         playerOrder = game.getPlayerOrder(firstPlayer)
