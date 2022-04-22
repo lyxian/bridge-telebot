@@ -52,13 +52,20 @@ def createBot():
         text = 'Welcome to Bridge-Telebot! ☺ Here are the list of commands to get you started:'
         text += '\n/startgame - Start new game'
         text += '\n/quitgame - Quit existing game'
+
+        if message.chat.id in db.keys():
+            if 'pinnedMessageId' in message.chat.id.keys():
+                bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
+            db[message.chat.id] = {}
         bot.send_message(message.chat.id, text, reply_markup=ReplyKeyboardRemove())
-        db[message.chat.id] = {}
         return
 
     @bot.message_handler(commands=["quitgame"])
     def _quitGame(message):
-        db[message.chat.id] = {}
+        if message.chat.id in db.keys():
+            if 'pinnedMessageId' in message.chat.id.keys():
+                bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
+            db[message.chat.id] = {}
         bot.send_message(message.chat.id, 'OK', reply_markup=ReplyKeyboardRemove())
         return
 
@@ -84,10 +91,15 @@ def createBot():
         firstPlayer = game._randomPlayer
         playerOrder = game.getPlayerOrder(firstPlayer)
         
+        bot.send_message(message.chat.id, game._playerResults)
+        bot.pin_chat_message(message.chat.id, message.id+1)
+
+
         bot.send_message(message.chat.id, f'{[i.name for i in playerOrder]}')
         # telebot.logger.debug([i.name for i in playerOrder])
 
         db[message.chat.id] = {
+            'pinnedMessageId': message.id+1,
             'game': game,
             'deck': deck,
             'players': players,
@@ -521,6 +533,7 @@ def createBot():
             text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
             bot.edit_message_text(f'Round Suit: {game.roundSuit}\n{text}\n<b>{winningCard.owner.name} wins with {winningCard}</b>', message.chat.id, message.id-2, parse_mode='html')
             # bot.send_message(message.chat.id, f'Round Suit: {game.roundSuit}\n{text}\n**{winningCard.owner.name} wins with {winningCard}**')
+            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
@@ -540,6 +553,7 @@ def createBot():
             text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
             bot.edit_message_text(f'Round Suit: {game.roundSuit}\n{text}\n<b>{winningCard.owner.name} wins with {winningCard}</b>', message.chat.id, message.id-2, parse_mode='html')
             # bot.send_message(message.chat.id, f'{text}\n{winningCard.owner.name} wins with {winningCard}')
+            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)

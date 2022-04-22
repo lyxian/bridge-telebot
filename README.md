@@ -65,6 +65,7 @@
 7. clean up code
 8. main func to check which handler to trigger
 9. handle player bidder
+10. show current tricks count <- use pinnedMessage
 
 # Telegram
 
