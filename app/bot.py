@@ -53,14 +53,21 @@ def createBot():
         text += '\n/startgame - Start new game'
         # text += '\n/quitGame - Quit existing game'
         bot.send_message(message.chat.id, text)
-        pass
+        db[message.chat.id] = {}
+        return
 
     @bot.message_handler(commands=["quitgame"])
     def _quitGame(message):
-        pass
+        db[message.chat.id] = {}
+        return
 
     @bot.message_handler(commands=["startgame"])
     def _startGame(message):
+        # Prevent duplicate games
+        if message.chat.id in db.keys():
+            if db[message.chat.id] != {}:
+                return
+
         # ===Game Start===
         deck = Deck()
         deck._shuffle
@@ -432,7 +439,7 @@ def createBot():
         firstPlayer = game.getPlayerOrder(game.currentBidder)[1]
         playerOrder = game.getPlayerOrder(firstPlayer)
 
-        count = 1
+        count = 0
         db[message.chat.id]['count'] = count
             
         playerOrder = game.getPlayerOrder(firstPlayer)
