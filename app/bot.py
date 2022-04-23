@@ -190,6 +190,10 @@ def createBot():
 
     @bot.message_handler(func=lambda message: checkPartnerSuit(message))
     def _replyPartnerSuit(message):
+        # Prevent bot from hanging
+        if message.chat.id not in db.keys():
+            bot.send_message(message.chat.id, f'Game not found, start new game with /startgame command', reply_markup=ReplyKeyboardRemove())
+            return
         winningBidder = db[message.chat.id]['winningBidder']
         if message.text == 'Back':
             bot.delete_message(message.chat.id, message.id-1)
@@ -216,6 +220,10 @@ def createBot():
             
     @bot.message_handler(func=lambda message: checkPartnerRank(message))
     def _replyPartnerRank(message):
+        # Prevent bot from hanging
+        if message.chat.id not in db.keys():
+            bot.send_message(message.chat.id, f'Game not found, start new game with /startgame command', reply_markup=ReplyKeyboardRemove())
+            return
         winningBidder = db[message.chat.id]['winningBidder']
         if message.text == 'Back':
             bot.delete_message(message.chat.id, message.id-1)
@@ -272,6 +280,10 @@ def createBot():
 
     @bot.message_handler(func=lambda message: checkBid(message))
     def _replyBid(message):
+        # Prevent bot from hanging
+        if message.chat.id not in db.keys():
+            bot.send_message(message.chat.id, f'Game not found, start new game with /startgame command', reply_markup=ReplyKeyboardRemove())
+            return
         bot.delete_message(message.chat.id, message.id-1)
         bot.delete_message(message.chat.id, message.id)
 
@@ -457,6 +469,10 @@ def createBot():
 
     @bot.message_handler(func=lambda message: checkPartner(message))
     def _replyPlayerPartner(message):
+        # Prevent bot from hanging
+        if message.chat.id not in db.keys():
+            bot.send_message(message.chat.id, f'Game not found, start new game with /startgame command', reply_markup=ReplyKeyboardRemove())
+            return
         game = db[message.chat.id]['game']
         deck = db[message.chat.id]['deck']
         winningBidder = db[message.chat.id]['player']
@@ -539,6 +555,10 @@ def createBot():
 
     @bot.message_handler(func=lambda message: checkPlay(message))
     def _replyPlay(message):
+        # Prevent bot from hanging
+        if message.chat.id not in db.keys():
+            bot.send_message(message.chat.id, f'Game not found, start new game with /startgame command', reply_markup=ReplyKeyboardRemove())
+            return
         bot.delete_message(message.chat.id, message.id-1)
         bot.delete_message(message.chat.id, message.id)
         # ==Playing==
