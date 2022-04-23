@@ -52,13 +52,48 @@ def createBot():
         text = 'Welcome to Bridge-Telebot! ☺ Here are the list of commands to get you started:'
         text += '\n/startgame - Start new game'
         text += '\n/quitgame - Quit existing game'
+
+        if message.chat.id in db.keys():
+            if 'pinnedMessageId' in db[message.chat.id].keys():
+                bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
+            db[message.chat.id] = {}
+        else:
+            method = 'getChat'
+            params = {
+                'chat_id': 315498839
+            }
+            response = callTelegramAPI(method, params)
+            if 'pinned_message' in response.json()['result']:
+                pinnedMessageId = response.json()['result']['pinned_message']['message_id']
+                method = 'unpinChatMessage'
+                params = {
+                    'message_id': pinnedMessageId,
+                    **params
+                }
+                response = callTelegramAPI(method, params)
         bot.send_message(message.chat.id, text, reply_markup=ReplyKeyboardRemove())
-        db[message.chat.id] = {}
         return
 
     @bot.message_handler(commands=["quitgame"])
     def _quitGame(message):
-        db[message.chat.id] = {}
+        if message.chat.id in db.keys():
+            if 'pinnedMessageId' in db[message.chat.id].keys():
+                bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
+            db[message.chat.id] = {}
+        else:
+            method = 'getChat'
+            params = {
+                'chat_id': 315498839
+            }
+            response = callTelegramAPI(method, params)
+            if 'pinned_message' in response.json()['result']:
+                pinnedMessageId = response.json()['result']['pinned_message']['message_id']
+                method = 'unpinChatMessage'
+                params = {
+                    'message_id': pinnedMessageId,
+                    **params
+                }
+                response = callTelegramAPI(method, params)
         bot.send_message(message.chat.id, 'OK', reply_markup=ReplyKeyboardRemove())
         return
 
@@ -84,10 +119,15 @@ def createBot():
         firstPlayer = game._randomPlayer
         playerOrder = game.getPlayerOrder(firstPlayer)
         
+        bot.send_message(message.chat.id, game._playerResults)
+        bot.pin_chat_message(message.chat.id, message.id+1)
+
+
         bot.send_message(message.chat.id, f'{[i.name for i in playerOrder]}')
         # telebot.logger.debug([i.name for i in playerOrder])
 
         db[message.chat.id] = {
+            'pinnedMessageId': message.id+1,
             'game': game,
             'deck': deck,
             'players': players,
@@ -215,6 +255,7 @@ def createBot():
                 db[message.chat.id]['remainingPlayers'] = None
 
                 bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+                bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
                 startPlay(message)
 
     def checkBid(message):
@@ -311,6 +352,7 @@ def createBot():
                 bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} (YOU)')
             else:
                 bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
             startPlay(message)
             return '', 200
             # telebot.logger.debug(f'{player.name} passed\n')
@@ -370,6 +412,7 @@ def createBot():
                     bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} (YOU)')
                 else:
                     bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+                bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
                 startPlay(message)
                 return '', 200
             if isinstance(player, Player):
@@ -430,6 +473,7 @@ def createBot():
         db[message.chat.id]['remainingPlayers'] = None
 
         bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+        bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
         startPlay(message)
 
     def startPlay(message):
@@ -524,6 +568,7 @@ def createBot():
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
+            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
         else: #if db[message.chat.id]['remainingPlayers']:
             for player in db[message.chat.id]['remainingPlayers']:
                 playedCard = player.play(game)
@@ -543,11 +588,13 @@ def createBot():
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
+            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
 
         db[message.chat.id]['count'] += 1
         count = db[message.chat.id]['count']
         if count >= 13:
             bot.send_message(message.chat.id, f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}', reply_markup=ReplyKeyboardRemove())
+            bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
         else:
             playerOrder = game.getPlayerOrder(firstPlayer)
             game.setRoundSuit(count)
