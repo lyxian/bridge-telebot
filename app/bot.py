@@ -54,18 +54,22 @@ def createBot():
         text += '\n/quitgame - Quit existing game'
 
         if message.chat.id in db.keys():
-            if 'pinnedMessageId' in message.chat.id.keys():
+            if 'pinnedMessageId' in db[message.chat.id].keys():
                 bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
             db[message.chat.id] = {}
+        else:
+            bot.unpin_chat_message(message.chat.id, 3584)
         bot.send_message(message.chat.id, text, reply_markup=ReplyKeyboardRemove())
         return
 
     @bot.message_handler(commands=["quitgame"])
     def _quitGame(message):
         if message.chat.id in db.keys():
-            if 'pinnedMessageId' in message.chat.id.keys():
+            if 'pinnedMessageId' in db[message.chat.id].keys():
                 bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
             db[message.chat.id] = {}
+        else:
+            bot.unpin_chat_message(message.chat.id, 3584)
         bot.send_message(message.chat.id, 'OK', reply_markup=ReplyKeyboardRemove())
         return
 
@@ -227,6 +231,7 @@ def createBot():
                 db[message.chat.id]['remainingPlayers'] = None
 
                 bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+                bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
                 startPlay(message)
 
     def checkBid(message):
@@ -323,6 +328,7 @@ def createBot():
                 bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} (YOU)')
             else:
                 bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
             startPlay(message)
             return '', 200
             # telebot.logger.debug(f'{player.name} passed\n')
@@ -382,6 +388,7 @@ def createBot():
                     bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} (YOU)')
                 else:
                     bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+                bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
                 startPlay(message)
                 return '', 200
             if isinstance(player, Player):
@@ -442,6 +449,7 @@ def createBot():
         db[message.chat.id]['remainingPlayers'] = None
 
         bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+        bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
         startPlay(message)
 
     def startPlay(message):
@@ -533,10 +541,10 @@ def createBot():
             text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
             bot.edit_message_text(f'Round Suit: {game.roundSuit}\n{text}\n<b>{winningCard.owner.name} wins with {winningCard}</b>', message.chat.id, message.id-2, parse_mode='html')
             # bot.send_message(message.chat.id, f'Round Suit: {game.roundSuit}\n{text}\n**{winningCard.owner.name} wins with {winningCard}**')
-            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
+            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
         else: #if db[message.chat.id]['remainingPlayers']:
             for player in db[message.chat.id]['remainingPlayers']:
                 playedCard = player.play(game)
@@ -553,15 +561,16 @@ def createBot():
             text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
             bot.edit_message_text(f'Round Suit: {game.roundSuit}\n{text}\n<b>{winningCard.owner.name} wins with {winningCard}</b>', message.chat.id, message.id-2, parse_mode='html')
             # bot.send_message(message.chat.id, f'{text}\n{winningCard.owner.name} wins with {winningCard}')
-            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
+            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
 
         db[message.chat.id]['count'] += 1
         count = db[message.chat.id]['count']
         if count >= 13:
             bot.send_message(message.chat.id, f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}', reply_markup=ReplyKeyboardRemove())
+            bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
         else:
             playerOrder = game.getPlayerOrder(firstPlayer)
             game.setRoundSuit(count)

@@ -20,7 +20,7 @@ class Game():
 
     @property
     def _playerResults(self):
-        return f'{self.currentBid} - Round {self.roundCount-1}: ' + ' | '.join([f'{player.name}: {player.tricks}' for player in self.players])
+        return f'{self.currentBid} - Round {self.roundCount+1}: ' + ' | '.join([f'{player.name}: {player.tricks}' for player in self.players])
 
     @property
     def _teamResults(self):
