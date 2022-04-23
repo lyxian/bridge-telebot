@@ -65,7 +65,9 @@
 7. clean up code
 8. main func to check which handler to trigger
 9. handle player bidder
-10. show current tricks count <- use pinnedMessage
+10. show current tricks count <- use pinnedMessage (ok)
+11. reset pinnedMessage via API/bot (ok)
+12. check for valid key after idle
 
 # Telegram
 

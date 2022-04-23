@@ -58,7 +58,19 @@ def createBot():
                 bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
             db[message.chat.id] = {}
         else:
-            bot.unpin_chat_message(message.chat.id, 3584)
+            method = 'getChat'
+            params = {
+                'chat_id': 315498839
+            }
+            response = callTelegramAPI(method, params)
+            if 'pinned_message' in response.json()['result']:
+                pinnedMessageId = response.json()['result']['pinned_message']['message_id']
+                method = 'unpinChatMessage'
+                params = {
+                    'message_id': pinnedMessageId,
+                    **params
+                }
+                response = callTelegramAPI(method, params)
         bot.send_message(message.chat.id, text, reply_markup=ReplyKeyboardRemove())
         return
 
@@ -69,7 +81,19 @@ def createBot():
                 bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
             db[message.chat.id] = {}
         else:
-            bot.unpin_chat_message(message.chat.id, 3584)
+            method = 'getChat'
+            params = {
+                'chat_id': 315498839
+            }
+            response = callTelegramAPI(method, params)
+            if 'pinned_message' in response.json()['result']:
+                pinnedMessageId = response.json()['result']['pinned_message']['message_id']
+                method = 'unpinChatMessage'
+                params = {
+                    'message_id': pinnedMessageId,
+                    **params
+                }
+                response = callTelegramAPI(method, params)
         bot.send_message(message.chat.id, 'OK', reply_markup=ReplyKeyboardRemove())
         return
 
