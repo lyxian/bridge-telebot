@@ -2,11 +2,15 @@ from flask import Flask, request
 import threading
 import telebot
 import time
+import sys
 import os
 
 from bot import createBot, createEmptyBot
 
-DEBUG_MODE = False #True
+if len(sys.argv) == 2:
+    DEBUG_MODE = eval(sys.argv[1])
+else:
+    DEBUG_MODE = True
 
 app = Flask(__name__)
 bot = createBot()
