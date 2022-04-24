@@ -182,6 +182,8 @@ def createBot():
                 # telebot.logger.debug(f'Current bid by {player.name} is: {bid}\n')
 
     def checkPartnerSuit(message):
+        if message.chat.id not in db.keys():
+            return False
         if db[message.chat.id]['choosePartnerSuit']:
             db[message.chat.id]['choosePartnerSuit'] = False
             return True
@@ -212,6 +214,8 @@ def createBot():
             bot.send_message(message.chat.id, f'Choose partner rank: ', reply_markup=createMarkupRanks())
 
     def checkPartnerRank(message):
+        if message.chat.id not in db.keys():
+            return False
         if db[message.chat.id]['choosePartnerRank']:
             db[message.chat.id]['choosePartnerRank'] = False
             return True
@@ -267,6 +271,8 @@ def createBot():
                 startPlay(message)
 
     def checkBid(message):
+        if message.chat.id not in db.keys():
+            return False
         text = message.text
         if db[message.chat.id]['continueBidding']:
             if text == 'Your Cards' or text == 'Pass' or text =='Back':
@@ -457,6 +463,8 @@ def createBot():
         return '', 200
 
     def checkPartner(message):
+        if message.chat.id not in db.keys():
+            return False
         text = message.text
         if 'playerTurn' in db[message.chat.id].keys():
             if db[message.chat.id]['playerTurn']:
@@ -497,7 +505,11 @@ def createBot():
         game = db[message.chat.id]['game']
         deck = db[message.chat.id]['deck']
         user = db[message.chat.id]['player']
-        firstPlayer = game.getPlayerOrder(game.currentBidder)[1]
+        bidSuit = game.currentBid.suit
+        if bidSuit == 'notrump':
+            firstPlayer = game.currentBidder
+        else:
+            firstPlayer = game.getPlayerOrder(game.currentBidder)[1]
         playerOrder = game.getPlayerOrder(firstPlayer)
 
         count = 0
@@ -547,6 +559,8 @@ def createBot():
                     deck._setRoundRules(game)
 
     def checkPlay(message):
+        if message.chat.id not in db.keys():
+            return False
         text = message.text
         if not db[message.chat.id]['continueBidding']:
             return True

@@ -68,6 +68,7 @@
 10. show current tricks count <- use pinnedMessage (ok)
 11. reset pinnedMessage via API/bot (ok)
 12. check for valid key after idle
+13. update NT rules
 
 # Telegram
 
