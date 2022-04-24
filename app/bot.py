@@ -629,6 +629,7 @@ def createBot():
         if count >= 13:
             bot.send_message(message.chat.id, f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}', reply_markup=ReplyKeyboardRemove())
             bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
+            db[message.chat.id] = {}
         else:
             playerOrder = game.getPlayerOrder(firstPlayer)
             game.setRoundSuit(count)
