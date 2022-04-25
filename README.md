@@ -46,7 +46,7 @@
 3. check for no trump first round (ok)
 4. check for break trump (ok)
 
-**v1.2** (ongoing)
+**v1.2** (pending)
 
 1. bot feed partner
 2. dump least suit
@@ -57,19 +57,22 @@
 **v2** (ongoing)
 
 1. port to telegram
-2. mongoDB integration
-3. no trump bot plays
-4. improve UI to choose partner (ok)
-5. validate bids (ok)
-6. improve message handling (ok)
-7. clean up code
-8. main func to check which handler to trigger
-9. handle player bidder
-10. show current tricks count <- use pinnedMessage (ok)
-11. reset pinnedMessage via API/bot (ok)
-12. check for valid key after idle
-13. update NT rules (ok)
-14. set webhook on Heroku aft init
+2. no trump bot plays
+3. improve UI to choose partner (ok)
+4. validate bids (ok)
+5. improve message handling (ok)
+6. clean up code
+7. main func to check which handler to trigger
+8. handle player bidder
+9. show current tricks count <- use pinnedMessage (ok)
+10. reset pinnedMessage via API/bot (ok)
+11. check for valid key after idle
+12. update NT rules (ok)
+13. set webhook on Heroku aft init (ok)
+
+**v3** (pending)
+
+1. mongoDB integration
 
 # Telegram
 
