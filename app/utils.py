@@ -60,5 +60,14 @@ class MongoDb:
             print('chatId not found..')
         return
 
+# Message Filter
+from enum import Enum
+class Filter(Enum):
+    replyPartnerSuit = 1
+    replyPartnerRank = 2
+    replyBid = 3
+    replyPlayerPartner = 4
+    replyPlay = 5
+
 if __name__ == '__main__':
     pass
