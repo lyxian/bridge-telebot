@@ -336,7 +336,7 @@ def createBot():
                 pass
             while continueBidding:
                 skippedPlayers = []
-                bot.send_message(message.chat.id, f'Round bidders: {[i.name for i in playerOrder]}')
+                # bot.send_message(message.chat.id, f'Round bidders: {[i.name for i in playerOrder]}')
                 for player in playerOrder:
                     if game.currentBidder and game.currentBidder == player:
                         continueBidding = False
@@ -355,7 +355,7 @@ def createBot():
                 if skippedPlayers:
                     for player in skippedPlayers:
                         playerOrder.pop(playerOrder.index(player))
-                time.sleep(1)
+                time.sleep(2)
                 
             # ==Post-Bidding==
             trump = game.currentBid.suit
