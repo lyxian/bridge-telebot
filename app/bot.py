@@ -477,7 +477,7 @@ def createBot():
                 if player.canFollow(game):
                     player.availableCards = [_ for _ in player.hand if _.suit == game.roundSuit]
                 else:
-                    if game.roundCount == 1 or (not game.brokeTrump and not game.playedCards):
+                    if game.roundCount == 0 or (not game.brokeTrump and not game.playedCards):
                         # print('No trump allowed')
                         player.availableCards = [_ for _ in player.hand if _.suit != game.trump]
                     else:
@@ -589,7 +589,7 @@ def createBot():
                     if player.canFollow(game):
                         player.availableCards = [_ for _ in player.hand if _.suit == game.roundSuit]
                     else:
-                        if game.roundCount == 1 or (not game.brokeTrump and not game.playedCards):
+                        if game.roundCount == 0 or (not game.brokeTrump and not game.playedCards):
                             # print('No trump allowed')
                             player.availableCards = [_ for _ in player.hand if _.suit != game.trump]
                         else:
