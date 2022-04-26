@@ -69,6 +69,8 @@
 11. check for valid key after idle
 12. update NT rules (ok)
 13. set webhook on Heroku aft init (ok)
+14. show all cards option during play
+15. show partner in pinnedMessage
 
 **v3** (pending)
 

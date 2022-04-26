@@ -20,7 +20,7 @@ class Game():
 
     @property
     def _playerResults(self):
-        return f'{self.currentBid} - Round {self.roundCount+1}: ' + ' | '.join([f'{player.name}: {player.tricks}' for player in self.players])
+        return f'{self.currentBid} - Round {self.roundCount+1}: ' + ' | '.join([f'*{player.name}*: {player.tricks}' if player == self.currentBidder else f'{player.name}: {player.tricks}' for player in self.players])
 
     @property
     def _teamResults(self):
@@ -64,6 +64,9 @@ class Game():
     def setRoundSuit(self, roundCount, suit=None):
         self.roundCount = roundCount
         self.roundSuit = suit
+
+    def setRoundMessageId(self, messageId):
+        self.roundMessageId = messageId
 
     def resetRoundCards(self):
         self.playedCards = []
