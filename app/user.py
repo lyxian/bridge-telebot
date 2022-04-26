@@ -20,7 +20,10 @@ class Game():
 
     @property
     def _playerResults(self):
-        return f'{self.currentBid} - Round {self.roundCount+1}: ' + ' | '.join([f'*{player.name}*: {player.tricks}' if player == self.currentBidder else f'{player.name}: {player.tricks}' for player in self.players])
+        if self.currentBidder:
+            return f'{self.currentBid}-{self.currentBidder.likelyPartner} Round {self.roundCount+1}: ' + ' | '.join([f'*{player.name}*: {player.tricks}' if player == self.currentBidder else f'{player.name}: {player.tricks}' for player in self.players])
+        else:
+            return f'{self.currentBid}-None Round {self.roundCount+1}: ' + ' | '.join([f'*{player.name}*: {player.tricks}' if player == self.currentBidder else f'{player.name}: {player.tricks}' for player in self.players])
 
     @property
     def _teamResults(self):
