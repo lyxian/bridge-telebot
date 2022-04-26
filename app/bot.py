@@ -543,7 +543,6 @@ def createBot():
                 else:
                     playerMessage += f'{player.name} plays first'
                 roundMessage = bot.send_message(message.chat.id, f'{playerMessage}')
-                print(f'\nSetting {roundMessage.id} as Round Message ID\n')
                 game.setRoundMessageId(roundMessage.id)
 
                 if player.canFollow(game):
@@ -676,7 +675,6 @@ def createBot():
                     else:
                         playerMessage += f'{player.name} plays first'
                     roundMessage = bot.send_message(message.chat.id, f'{playerMessage}')
-                    print(f'\nSetting {roundMessage.id} as Round Message ID\n')
                     game.setRoundMessageId(roundMessage.id)
                     if player.canFollow(game):
                         player.availableCards = [_ for _ in player.hand if _.suit == game.roundSuit]
