@@ -124,7 +124,7 @@ def createBot():
         bot.pin_chat_message(message.chat.id, message.id+1)
 
 
-        bot.send_message(message.chat.id, f'{[i.name for i in playerOrder]}')
+        # bot.send_message(message.chat.id, f'{[i.name for i in playerOrder]}')
         # telebot.logger.debug([i.name for i in playerOrder])
 
         db[message.chat.id] = {
@@ -277,7 +277,7 @@ def createBot():
                 pass
             while continueBidding:
                 skippedPlayers = []
-                bot.send_message(message.chat.id, f'Round bidders: {[i.name for i in playerOrder]}')
+                # bot.send_message(message.chat.id, f'Round bidders: {[i.name for i in playerOrder]}')
                 for player in playerOrder:
                     if game.currentBidder and game.currentBidder == player:
                         continueBidding = False
@@ -296,7 +296,7 @@ def createBot():
                 if skippedPlayers:
                     for player in skippedPlayers:
                         playerOrder.pop(playerOrder.index(player))
-                time.sleep(1)
+                time.sleep(2)
                 
             # ==Post-Bidding==
             trump = game.currentBid.suit
@@ -483,7 +483,7 @@ def createBot():
                 if player.canFollow(game):
                     player.availableCards = [_ for _ in player.hand if _.suit == game.roundSuit]
                 else:
-                    if game.roundCount == 1 or (not game.brokeTrump and not game.playedCards):
+                    if game.roundCount == 0 or (not game.brokeTrump and not game.playedCards):
                         # print('No trump allowed')
                         player.availableCards = [_ for _ in player.hand if _.suit != game.trump]
                     else:
@@ -590,7 +590,7 @@ def createBot():
                     if player.canFollow(game):
                         player.availableCards = [_ for _ in player.hand if _.suit == game.roundSuit]
                     else:
-                        if game.roundCount == 1 or (not game.brokeTrump and not game.playedCards):
+                        if game.roundCount == 0 or (not game.brokeTrump and not game.playedCards):
                             # print('No trump allowed')
                             player.availableCards = [_ for _ in player.hand if _.suit != game.trump]
                         else:
