@@ -9,6 +9,7 @@ import re
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from card import Bid, Card, Deck, Rank, Suit, cardMappings
 from user import Game, Player, Bot
+from utils import Filter
 
 # Commands
 # /start
@@ -181,16 +182,55 @@ def createBot():
                 bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
                 # telebot.logger.debug(f'Current bid by {player.name} is: {bid}\n')
 
-    def checkPartnerSuit(message):
+    def messageFilter(message, mode):
+        # Check if user has existing game
         if message.chat.id not in db.keys():
+            # bot.send_message()
             return False
-        if db[message.chat.id]['choosePartnerSuit']:
-            db[message.chat.id]['choosePartnerSuit'] = False
-            return True
-        else:
-            return False
+        
+        text = message.text
+        # Check message and trigger respective function
+        if mode == Filter.replyPartnerSuit:
+            if db[message.chat.id]['choosePartnerSuit']:
+                db[message.chat.id]['choosePartnerSuit'] = False
+                return True
+            else:
+                return False
+        elif mode == Filter.replyPartnerRank:
+            if db[message.chat.id]['choosePartnerRank']:
+                db[message.chat.id]['choosePartnerRank'] = False
+                return True
+            else:
+                return False
+        elif mode == Filter.replyBid:
+            if db[message.chat.id]['continueBidding']:
+                if text == 'Your Cards' or text == 'Pass' or text =='Back':
+                    return True
+                elif re.search(r'\d(♣|♦|♥|♠|NT)', text):
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        elif mode == Filter.replyPlayerPartner:
+            if 'playerTurn' in db[message.chat.id].keys():
+                if db[message.chat.id]['playerTurn']:
+                    db[message.chat.id]['playerTurn'] = False
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        elif mode == Filter.replyPlay:
+            if not db[message.chat.id]['continueBidding']:
+                return True
+            else:
+                return False
 
-    @bot.message_handler(func=lambda message: checkPartnerSuit(message))
+        # bot.send_message('Not handled') 
+        return False
+            
+    @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPartnerSuit))
     def _replyPartnerSuit(message):
         # Prevent bot from hanging
         if message.chat.id not in db.keys():
@@ -212,17 +252,8 @@ def createBot():
             db[message.chat.id]['partnerSuit'] = message.text
             db[message.chat.id]['choosePartnerRank'] = True
             bot.send_message(message.chat.id, f'Choose partner rank: ', reply_markup=createMarkupRanks())
-
-    def checkPartnerRank(message):
-        if message.chat.id not in db.keys():
-            return False
-        if db[message.chat.id]['choosePartnerRank']:
-            db[message.chat.id]['choosePartnerRank'] = False
-            return True
-        else:
-            return False
             
-    @bot.message_handler(func=lambda message: checkPartnerRank(message))
+    @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPartnerRank))
     def _replyPartnerRank(message):
         # Prevent bot from hanging
         if message.chat.id not in db.keys():
@@ -270,21 +301,7 @@ def createBot():
                 bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
                 startPlay(message)
 
-    def checkBid(message):
-        if message.chat.id not in db.keys():
-            return False
-        text = message.text
-        if db[message.chat.id]['continueBidding']:
-            if text == 'Your Cards' or text == 'Pass' or text =='Back':
-                return True
-            elif re.search(r'\d(♣|♦|♥|♠|NT)', text):
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    @bot.message_handler(func=lambda message: checkBid(message))
+    @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyBid))
     def _replyBid(message):
         # Prevent bot from hanging
         if message.chat.id not in db.keys():
@@ -462,20 +479,7 @@ def createBot():
         # telebot.logger.debug(message)
         return '', 200
 
-    def checkPartner(message):
-        if message.chat.id not in db.keys():
-            return False
-        text = message.text
-        if 'playerTurn' in db[message.chat.id].keys():
-            if db[message.chat.id]['playerTurn']:
-                db[message.chat.id]['playerTurn'] = False
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    @bot.message_handler(func=lambda message: checkPartner(message))
+    @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPlayerPartner))
     def _replyPlayerPartner(message):
         # Prevent bot from hanging
         if message.chat.id not in db.keys():
@@ -558,16 +562,7 @@ def createBot():
                     game.setRoundSuit(count+1, playedCard.suit)
                     deck._setRoundRules(game)
 
-    def checkPlay(message):
-        if message.chat.id not in db.keys():
-            return False
-        text = message.text
-        if not db[message.chat.id]['continueBidding']:
-            return True
-        else:
-            return False
-
-    @bot.message_handler(func=lambda message: checkPlay(message))
+    @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPlay))
     def _replyPlay(message):
         # Prevent bot from hanging
         if message.chat.id not in db.keys():
