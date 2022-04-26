@@ -181,6 +181,10 @@ def createBot():
                 game.currentBidder = player
                 bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
                 # telebot.logger.debug(f'Current bid by {player.name} is: {bid}\n')
+        if skippedPlayers:
+            for player in skippedPlayers:
+                playerOrder.pop(playerOrder.index(player))
+            db[message.chat.id]['playerOrder'] = playerOrder
 
     def messageFilter(message, mode):
         # Check if user has existing game
@@ -350,7 +354,7 @@ def createBot():
             if skippedPlayers:
                 for player in skippedPlayers:
                     playerOrder.pop(playerOrder.index(player))
-                pass
+                db[message.chat.id]['playerOrder'] = playerOrder
             while continueBidding:
                 skippedPlayers = []
                 # bot.send_message(message.chat.id, f'Round bidders: {[i.name for i in playerOrder]}')
@@ -372,7 +376,8 @@ def createBot():
                 if skippedPlayers:
                     for player in skippedPlayers:
                         playerOrder.pop(playerOrder.index(player))
-                time.sleep(2)
+                    db[message.chat.id]['playerOrder'] = playerOrder
+                time.sleep(0.5)
                 
             # ==Post-Bidding==
             trump = game.currentBid.suit
@@ -418,6 +423,7 @@ def createBot():
             if skippedPlayers:
                 for player in skippedPlayers:
                     playerOrder.pop(playerOrder.index(player))
+                db[message.chat.id]['playerOrder'] = playerOrder
 
         for player in playerOrder:
             if game.currentBidder and game.currentBidder == player:
@@ -469,14 +475,17 @@ def createBot():
                 skippedPlayers.append(player)
                 bot.send_message(message.chat.id, f'{player.name} passed\n')
                 # telebot.logger.debug(f'{player.name} passed\n')
+                # playerOrder.pop(playerOrder.index(player))
+                db[message.chat.id]['playerOrder'] = playerOrder
             else:
                 game.currentBid = bid
                 game.currentBidder = player
                 bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
                 # telebot.logger.debug(f'Current bid by {player.name} is: {bid}\n')
-
-        # db[message.chat.id]['playerOrder'] = playerOrder
-        # telebot.logger.debug(message)
+        if skippedPlayers:
+            for player in skippedPlayers:
+                playerOrder.pop(playerOrder.index(player))
+            db[message.chat.id]['playerOrder'] = playerOrder
         return '', 200
 
     @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPlayerPartner))
@@ -533,17 +542,19 @@ def createBot():
                     playerMessage += ', '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
                 else:
                     playerMessage += f'{player.name} plays first'
-                bot.send_message(message.chat.id, f'{playerMessage}')
+                roundMessage = bot.send_message(message.chat.id, f'{playerMessage}')
+                print(f'\nSetting {roundMessage.id} as Round Message ID\n')
+                game.setRoundMessageId(roundMessage.id)
 
                 if player.canFollow(game):
                     player.availableCards = [_ for _ in player.hand if _.suit == game.roundSuit]
                 else:
-                    if game.roundCount == 0 or (not game.brokeTrump and not game.playedCards):
+                    if game.roundCount <= 1 or (not game.brokeTrump and not game.playedCards):
                         # print('No trump allowed')
                         player.availableCards = [_ for _ in player.hand if _.suit != game.trump]
                     else:
                         player.availableCards = player.hand
-                bot.send_message(message.chat.id, f'Your Hand: ', reply_markup=createMarkupPlay(player.availableCards))
+                bot.send_message(message.chat.id, f'Your Hand: ', reply_markup=createMarkupPlay(player.availableCards, False))
                 idx = playerOrder.index(player)
                 if idx != 3:
                     db[message.chat.id]['remainingPlayers'] = playerOrder[idx+1:]
@@ -570,6 +581,7 @@ def createBot():
             return
         bot.delete_message(message.chat.id, message.id-1)
         bot.delete_message(message.chat.id, message.id)
+        
         # ==Playing==
         game = db[message.chat.id]['game']
         deck = db[message.chat.id]['deck']
@@ -577,6 +589,29 @@ def createBot():
         # firstPlayer = game.getPlayerOrder(game.currentBidder)[1]
         # playerOrder = game.getPlayerOrder(firstPlayer)
         count = db[message.chat.id]['count']
+
+        # Look at hand
+        if message.text == 'Your Cards':
+            bot.send_message(message.chat.id, f'Your Hand: ', reply_markup=createMarkupPlay(user.hand, True))
+            return
+        elif message.text == 'Back':
+            bot.send_message(message.chat.id, f'Your Hand: ', reply_markup=createMarkupPlay(user.availableCards, False))
+            return
+
+        # Check if card is valid
+        cardSuit = cardMappings[message.text[-1]]
+        if game.roundSuit:
+            if user.canFollow(game) and cardSuit != game.roundSuit:
+                bot.send_message(message.chat.id, f'Invalid move!\nYour Hand: ', reply_markup=createMarkupPlay(user.availableCards, False))
+                return
+            else:
+                if game.roundCount <= 1 and cardSuit == game.trump:
+                    bot.send_message(message.chat.id, f'Invalid move!\nYour Hand: ', reply_markup=createMarkupPlay(user.availableCards, False))
+                    return
+        else:
+            if not game.brokeTrump and cardSuit == game.trump and game.roundCount <= 1:
+                bot.send_message(message.chat.id, f'Invalid move!\nYour Hand: ', reply_markup=createMarkupPlay(user.availableCards, False))
+                return
 
         playedCard = user.hand.pop(user._handIndex[message.text])
         game.addRoundCards(playedCard)
@@ -592,7 +627,7 @@ def createBot():
         if len(game.playedCards) == 4:
             winningCard = sorted(game.playedCards, reverse=True)[0]
             text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
-            bot.edit_message_text(f'Round Suit: {game.roundSuit}\n{text}\n<b>{winningCard.owner.name} wins with {winningCard}</b>', message.chat.id, message.id-2, parse_mode='html')
+            bot.edit_message_text(f'Round Suit: {game.roundSuit}\n{text}\n<b>{winningCard.owner.name} wins with {winningCard}</b>', message.chat.id, game.roundMessageId, parse_mode='html')
             # bot.send_message(message.chat.id, f'Round Suit: {game.roundSuit}\n{text}\n**{winningCard.owner.name} wins with {winningCard}**')
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
@@ -612,7 +647,7 @@ def createBot():
                     deck._setRoundRules(game)
             winningCard = sorted(game.playedCards, reverse=True)[0]
             text = ' | '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
-            bot.edit_message_text(f'Round Suit: {game.roundSuit}\n{text}\n<b>{winningCard.owner.name} wins with {winningCard}</b>', message.chat.id, message.id-2, parse_mode='html')
+            bot.edit_message_text(f'Round Suit: {game.roundSuit}\n{text}\n<b>{winningCard.owner.name} wins with {winningCard}</b>', message.chat.id, game.roundMessageId, parse_mode='html')
             # bot.send_message(message.chat.id, f'{text}\n{winningCard.owner.name} wins with {winningCard}')
             firstPlayer = winningCard.owner
             firstPlayer.tricks += 1
@@ -640,17 +675,18 @@ def createBot():
                         playerMessage += ', '.join([f'{card.owner.name}: {card}' for card in game.playedCards])
                     else:
                         playerMessage += f'{player.name} plays first'
-                    bot.send_message(message.chat.id, f'{playerMessage}')
-
+                    roundMessage = bot.send_message(message.chat.id, f'{playerMessage}')
+                    print(f'\nSetting {roundMessage.id} as Round Message ID\n')
+                    game.setRoundMessageId(roundMessage.id)
                     if player.canFollow(game):
                         player.availableCards = [_ for _ in player.hand if _.suit == game.roundSuit]
                     else:
-                        if game.roundCount == 0 or (not game.brokeTrump and not game.playedCards):
+                        if game.roundCount <= 0 or (not game.brokeTrump and not game.playedCards):
                             # print('No trump allowed')
                             player.availableCards = [_ for _ in player.hand if _.suit != game.trump]
                         else:
                             player.availableCards = player.hand
-                    bot.send_message(message.chat.id, f'Your Hand: ', reply_markup=createMarkupPlay(player.availableCards))
+                    bot.send_message(message.chat.id, f'Your Hand: ', reply_markup=createMarkupPlay(player.availableCards, False))
                     idx = playerOrder.index(player)
                     if idx != 3:
                         db[message.chat.id]['remainingPlayers'] = playerOrder[idx+1:]
@@ -681,7 +717,7 @@ def createBot():
         )
         return markup
 
-    def createMarkupPlay(cards):
+    def createMarkupPlay(cards, showAll):
         n = len(cards)
         if n > 3:
             if n == 4:
@@ -714,6 +750,10 @@ def createBot():
                 *[KeyboardButton(str(cards[i+sum(grid[:count])]).strip()) for i in range(row)]
             )
             count += 1
+        if showAll:
+            markup.add(KeyboardButton('Back'))
+        else:
+            markup.add(KeyboardButton('Your Cards'))
         return markup
 
     def createMarkupHand(cards):
