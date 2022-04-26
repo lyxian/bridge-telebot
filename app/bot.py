@@ -123,7 +123,7 @@ def createBot():
         bot.pin_chat_message(message.chat.id, message.id+1)
 
 
-        bot.send_message(message.chat.id, f'{[i.name for i in playerOrder]}')
+        # bot.send_message(message.chat.id, f'{[i.name for i in playerOrder]}')
         # telebot.logger.debug([i.name for i in playerOrder])
 
         db[message.chat.id] = {
