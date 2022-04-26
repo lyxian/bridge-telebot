@@ -185,7 +185,7 @@ def createBot():
     def messageFilter(message, mode):
         # Check if user has existing game
         if message.chat.id not in db.keys():
-            # bot.send_message()
+            bot.send_message(message.chat.id, f'Game not found, start new game with /startgame command', reply_markup=ReplyKeyboardRemove())
             return False
         
         text = message.text
@@ -229,84 +229,9 @@ def createBot():
 
         # bot.send_message('Not handled') 
         return False
-            
-    @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPartnerSuit))
-    def _replyPartnerSuit(message):
-        # Prevent bot from hanging
-        if message.chat.id not in db.keys():
-            bot.send_message(message.chat.id, f'Game not found, start new game with /startgame command', reply_markup=ReplyKeyboardRemove())
-            return
-        winningBidder = db[message.chat.id]['winningBidder']
-        if message.text == 'Back':
-            bot.delete_message(message.chat.id, message.id-1)
-            bot.delete_message(message.chat.id, message.id)
-            db[message.chat.id]['choosePartnerSuit'] = True
-            bot.send_message(message.chat.id, f'Choose partner suit: ', reply_markup=createMarkupSuits())
-        elif message.text == 'Your Cards':
-            bot.delete_message(message.chat.id, message.id-1)
-            bot.delete_message(message.chat.id, message.id)
-            # bot.edit_message_reply_markup(chat_id=message.chat.id, message_id=message.id-1, reply_markup=createMarkupHand(user.hand))
-            bot.send_message(message.chat.id, 'Your Cards', reply_markup=createMarkupHand(winningBidder.hand))
-            db[message.chat.id]['choosePartnerSuit'] = True
-        else:
-            db[message.chat.id]['partnerSuit'] = message.text
-            db[message.chat.id]['choosePartnerRank'] = True
-            bot.send_message(message.chat.id, f'Choose partner rank: ', reply_markup=createMarkupRanks())
-            
-    @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPartnerRank))
-    def _replyPartnerRank(message):
-        # Prevent bot from hanging
-        if message.chat.id not in db.keys():
-            bot.send_message(message.chat.id, f'Game not found, start new game with /startgame command', reply_markup=ReplyKeyboardRemove())
-            return
-        winningBidder = db[message.chat.id]['winningBidder']
-        if message.text == 'Back':
-            bot.delete_message(message.chat.id, message.id-1)
-            bot.delete_message(message.chat.id, message.id)
-            db[message.chat.id]['choosePartnerSuit'] = True
-            bot.send_message(message.chat.id, f'Choose partner suit: ', reply_markup=createMarkupSuits())
-        elif message.text == 'Your Cards':
-            bot.delete_message(message.chat.id, message.id-1)
-            bot.delete_message(message.chat.id, message.id)
-            # bot.edit_message_reply_markup(chat_id=message.chat.id, message_id=message.id-1, reply_markup=createMarkupHand(user.hand))
-            bot.send_message(message.chat.id, 'Your Cards', reply_markup=createMarkupHand(winningBidder.hand))
-            db[message.chat.id]['choosePartnerSuit'] = True
-        else:
-            db[message.chat.id]['partnerRank'] = message.text
-            # Create card object
-            game = db[message.chat.id]['game']
-            deck = db[message.chat.id]['deck']
-            rank = cardMappings[db[message.chat.id]['partnerRank']]
-            suit = cardMappings[db[message.chat.id]['partnerSuit']]
-            winningBidder = db[message.chat.id]['winningBidder']
-            cardStr = db[message.chat.id]['partnerRank'] + db[message.chat.id]['partnerSuit']
-
-            # Check if card in hands
-            if len([card for card in db[message.chat.id]['winningBidder'].hand if card.rank == rank and card.suit == suit]):
-                db[message.chat.id]['choosePartnerSuit'] = True
-                bot.send_message(message.chat.id, f'{cardStr} found in hand, choose again.\nChoose partner suit: ', reply_markup=createMarkupSuits())
-                # telebot.logging(f'Partner card found in own hand, please select partner again')
-            else:
-                winningBidder.setLikelyPartner([card for card in game.deck.deck if card.rank == rank and card.suit == suit][0])
-                # ==Post-Bidding==
-                trump = game.currentBid.suit
-                game.setTrump(trump)
-                deck._setGameRules(game)
-                db[message.chat.id]['continueBidding'] = False
-                db[message.chat.id]['firstPlayer'] = game.getPlayerOrder(winningBidder)[1]    
-                telebot.logging.debug(db[message.chat.id]['remainingPlayers'])
-                db[message.chat.id]['remainingPlayers'] = None
-
-                bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
-                bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
-                startPlay(message)
 
     @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyBid))
     def _replyBid(message):
-        # Prevent bot from hanging
-        if message.chat.id not in db.keys():
-            bot.send_message(message.chat.id, f'Game not found, start new game with /startgame command', reply_markup=ReplyKeyboardRemove())
-            return
         bot.delete_message(message.chat.id, message.id-1)
         bot.delete_message(message.chat.id, message.id)
 
@@ -321,7 +246,6 @@ def createBot():
         text = message.text
         skippedPlayers = []
         if text == 'Your Cards':
-            # bot.edit_message_reply_markup(chat_id=message.chat.id, message_id=message.id-1, reply_markup=createMarkupHand(user.hand))
             bot.send_message(message.chat.id, 'Your Cards', reply_markup=createMarkupHand(user.hand))
             return
         elif text == 'Back':
@@ -399,7 +323,8 @@ def createBot():
                 game.currentBidder = user
                 bot.send_message(message.chat.id, f'Current bid by {user.name} is: {bid}\n')
             else: # if invalid, ask again
-                bot.send_message(message.chat.id, f'You have entered an invalid bid, please try again.\nYour Hand: {Deck.showBySuitStr(user.hand)}', reply_markup=createMarkupBid())
+                # bot.send_message(message.chat.id, f'You have entered an invalid bid, please try again.\nYour Hand: {Deck.showBySuitStr(user.hand)}', reply_markup=createMarkupBid())
+                bot.send_message(message.chat.id, f'You have entered an invalid bid, please try again.\nYour Hand: ', reply_markup=createMarkupPlay(user.hand))
                 return
 
         # Let remaining players bid for current round
@@ -435,13 +360,10 @@ def createBot():
                         bot.send_message(message.chat.id, f'Choose partner suit: ', reply_markup=createMarkupSuits())
                     break
                 # ==Post-Bidding==
-                trump = game.currentBid.suit
-                game.setTrump(trump)
+                game.setTrump(game.currentBid.suit)
                 deck._setGameRules(game)
                 db[message.chat.id]['continueBidding'] = continueBidding
-                db[message.chat.id]['firstPlayer'] = game.getPlayerOrder(winningBidder)[1]    
-                telebot.logging.debug(db[message.chat.id]['remainingPlayers'])
-                db[message.chat.id]['remainingPlayers'] = None
+                # db[message.chat.id]['remainingPlayers'] = None
 
                 if winningBidder.likelyPartner.owner == user:
                     bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} (YOU)')
@@ -473,36 +395,59 @@ def createBot():
                 game.currentBid = bid
                 game.currentBidder = player
                 bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
-                # telebot.logger.debug(f'Current bid by {player.name} is: {bid}\n')
-
-        # db[message.chat.id]['playerOrder'] = playerOrder
-        # telebot.logger.debug(message)
         return '', 200
+            
+    @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPartnerSuit))
+    def _replyPartnerSuit(message):
+        winningBidder = db[message.chat.id]['winningBidder']
+        if message.text in ['Back', 'Your Cards']:
+            bot.delete_message(message.chat.id, message.id-1)
+            bot.delete_message(message.chat.id, message.id)
+            db[message.chat.id]['choosePartnerSuit'] = True
+            if message.text == 'Back':
+                bot.send_message(message.chat.id, f'Choose partner suit: ', reply_markup=createMarkupSuits())
+            elif message.text == 'Your Cards':
+                bot.send_message(message.chat.id, 'Your Cards', reply_markup=createMarkupHand(winningBidder.hand))
+        else:
+            db[message.chat.id]['partnerSuit'] = message.text
+            db[message.chat.id]['choosePartnerRank'] = True
+            bot.send_message(message.chat.id, f'Choose partner rank: ', reply_markup=createMarkupRanks())
+            
+    @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPartnerRank))
+    def _replyPartnerRank(message):
+        winningBidder = db[message.chat.id]['winningBidder']
+        if message.text in ['Back', 'Your Cards']:
+            bot.delete_message(message.chat.id, message.id-1)
+            bot.delete_message(message.chat.id, message.id)
+            db[message.chat.id]['choosePartnerSuit'] = True
+            if message.text == 'Back':
+                bot.send_message(message.chat.id, f'Choose partner suit: ', reply_markup=createMarkupSuits())
+            elif message.text == 'Your Cards':
+                bot.send_message(message.chat.id, 'Your Cards', reply_markup=createMarkupHand(winningBidder.hand))
+        else:
+            db[message.chat.id]['partnerRank'] = message.text
+            # Create card object
+            game = db[message.chat.id]['game']
+            deck = db[message.chat.id]['deck']
+            rank = cardMappings[db[message.chat.id]['partnerRank']]
+            suit = cardMappings[db[message.chat.id]['partnerSuit']]
+            winningBidder = db[message.chat.id]['winningBidder']
+            cardStr = db[message.chat.id]['partnerRank'] + db[message.chat.id]['partnerSuit']
 
-    @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPlayerPartner))
-    def _replyPlayerPartner(message):
-        # Prevent bot from hanging
-        if message.chat.id not in db.keys():
-            bot.send_message(message.chat.id, f'Game not found, start new game with /startgame command', reply_markup=ReplyKeyboardRemove())
-            return
-        game = db[message.chat.id]['game']
-        deck = db[message.chat.id]['deck']
-        winningBidder = db[message.chat.id]['player']
+            # Check if card in hands
+            if Deck.findCard(db[message.chat.id]['winningBidder'].hand, suit, rank):
+                db[message.chat.id]['choosePartnerSuit'] = True
+                bot.send_message(message.chat.id, f'{cardStr} found in hand, choose again.', reply_markup=createMarkupSuits())
+            else:
+                winningBidder.setLikelyPartner(Deck.findCard(game.deck.deck, suit, rank))
+                # ==Post-Bidding==
+                game.setTrump(game.currentBid.suit)
+                deck._setGameRules(game)
+                db[message.chat.id]['continueBidding'] = False
 
-        rank, suit = message.text.lower().split()
-        winningBidder.setLikelyPartner([card for card in deck.deck if card.rank == rank and card.suit == suit][0])
-        # ==Post-Bidding==
-        trump = game.currentBid.suit
-        game.setTrump(trump)
-        deck._setGameRules(game)
-        db[message.chat.id]['continueBidding'] = False
-        db[message.chat.id]['firstPlayer'] = game.getPlayerOrder(winningBidder)[1]    
-        telebot.logging.debug(db[message.chat.id]['remainingPlayers'])
-        db[message.chat.id]['remainingPlayers'] = None
-
-        bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
-        bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
-        startPlay(message)
+                bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+                bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
+                startPlay(message)
 
     def startPlay(message):
         # ==Playing==
