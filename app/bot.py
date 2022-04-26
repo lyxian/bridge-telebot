@@ -404,7 +404,7 @@ def createBot():
                 game.currentBidder = user
                 bot.send_message(message.chat.id, f'Current bid by {user.name} is: {bid}\n')
             else: # if invalid, ask again
-                bot.send_message(message.chat.id, f'You have entered an invalid bid, please try again.\nYour Hand: {Deck.showBySuitStr(user.hand)}', reply_markup=createMarkupBid())
+                bot.send_message(message.chat.id, f'Invalid bid, choose again: ', reply_markup=createMarkupBid())
                 return
 
         # Let remaining players bid for current round
