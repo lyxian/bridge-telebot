@@ -42,6 +42,17 @@ class Game():
     def _randomPlayer(self):
         return sample(self.players, k=1)[0]
 
+    @property
+    def _hasEnded(self):
+        requiredBidTricks = 6 + self.currentBid.number
+        biddingTeamScore = sum([i.tricks for i in self.biddingTeam])
+        otherTeamScore = sum([i.tricks for i in self.otherTeam])
+        if biddingTeamScore == requiredBidTricks or otherTeamScore == 14 - requiredBidTricks:
+            return True
+        else:
+            return False
+
+
     def getPlayerOrder(self, firstPlayer):
         playersArray = self.players + self.players[:-1]
         idx = playersArray.index(firstPlayer)
