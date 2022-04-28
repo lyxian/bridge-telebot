@@ -1,15 +1,13 @@
-from cryptography.fernet import Fernet
 import requests
 import logging
 import telebot
 import time
-import os
 import re
 
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from card import Bid, Card, Deck, Rank, Suit, cardMappings
 from user import Game, Player, Bot
-from utils import Filter
+from utils import getToken, Filter, createMarkupBid, createMarkupPlay, createMarkupHand, createMarkupSuits, createMarkupRanks
 
 # Commands
 # /start
@@ -21,11 +19,6 @@ from utils import Filter
 # ! Check for re-shuffle (TODO)
 
 db = {}
-
-def getToken():
-    key = bytes(os.getenv("KEY"), "utf-8")
-    encrypted = bytes(os.getenv("SECRET_TELEGRAM"), "utf-8")
-    return Fernet(key).decrypt(encrypted).decode()
 
 def callTelegramAPI(method, params):
     url = 'https://api.telegram.org/bot{}/{}'.format(getToken(), method)
@@ -116,7 +109,7 @@ def createBot():
         deck.distribute(players)
 
         # ==Bidding==
-        game = Game(players, deck)
+        game = Game(players, deck, message.chat.id)
         firstPlayer = game._randomPlayer
         playerOrder = game.getPlayerOrder(firstPlayer)
         
@@ -145,21 +138,8 @@ def createBot():
         # telebot.logger.debug(f'Round bidders: {[i.name for i in playerOrder]}')
 
         for player in playerOrder:
-            if game.currentBidder and game.currentBidder == player:
-                continueBidding = False
-                winningBidder = player
-                db[message.chat.id]['winningBidder'] = player
-                if isinstance(winningBidder, Player):
-                    # bot.send_message(message.chat.id, f'Your Hand: {Deck.showBySuitStr(winningBidder.hand)}')
-                    if 1:
-                        rank, suit = 'ace spade'.split()
-                    else:
-                        db[message.chat.id]['choosePartnerSuit'] = True
-                        bot.send_message(message.chat.id, f'Choose partner suit: ', reply_markup=createMarkupSuits())
-                break
+            bid = player.bid(game)
             if isinstance(player, Player):
-                bot.send_message(message.chat.id, 'Your Cards', reply_markup=createMarkupHand(player.hand))
-                # bot.send_message(message.chat.id, f'Your Hand: {Deck.showBySuitStr(player.hand)}', reply_markup=createMarkupBid())
                 idx = playerOrder.index(player)
                 if idx != 3:
                     db[message.chat.id]['remainingPlayers'] = playerOrder[idx+1:]
@@ -171,16 +151,13 @@ def createBot():
                     db[message.chat.id]['playerOrder'] = playerOrder
                 break
             else:
-                bid = player.bid(game)
-            if bid == 'Pass':
-                skippedPlayers.append(player)
-                bot.send_message(message.chat.id, f'{player.name} passed\n')
-                # telebot.logger.debug(f'{player.name} passed\n')
-            else:
-                game.currentBid = bid
-                game.currentBidder = player
-                bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
-                # telebot.logger.debug(f'Current bid by {player.name} is: {bid}\n')
+                if bid == 'Pass':
+                    skippedPlayers.append(player)
+                    bot.send_message(message.chat.id, f'{player.name} passed\n')
+                else:
+                    game.currentBid = bid
+                    game.currentBidder = player
+                    bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
         if skippedPlayers:
             for player in skippedPlayers:
                 playerOrder.pop(playerOrder.index(player))
@@ -377,9 +354,8 @@ def createBot():
                 bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
                 startPlay(message)
                 return '', 200
+            bid = player.bid(game)
             if isinstance(player, Player):
-                bot.send_message(message.chat.id, 'Your Cards', reply_markup=createMarkupHand(player.hand))
-                # bot.send_message(message.chat.id, f'Your Hand: {Deck.showBySuitStr(player.hand)}', reply_markup=createMarkupBid())
                 idx = playerOrder.index(player)
                 if idx != 3:
                     db[message.chat.id]['remainingPlayers'] = playerOrder[idx+1:]
@@ -391,18 +367,14 @@ def createBot():
                     db[message.chat.id]['playerOrder'] = playerOrder
                 break
             else:
-                bid = player.bid(game)
-            if bid == 'Pass':
-                skippedPlayers.append(player)
-                bot.send_message(message.chat.id, f'{player.name} passed\n')
-                # telebot.logger.debug(f'{player.name} passed\n')
-                # playerOrder.pop(playerOrder.index(player))
-                db[message.chat.id]['playerOrder'] = playerOrder
-            else:
-                game.currentBid = bid
-                game.currentBidder = player
-                bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
-                # telebot.logger.debug(f'Current bid by {player.name} is: {bid}\n')
+                if bid == 'Pass':
+                    skippedPlayers.append(player)
+                    bot.send_message(message.chat.id, f'{player.name} passed\n')
+                    db[message.chat.id]['playerOrder'] = playerOrder
+                else:
+                    game.currentBid = bid
+                    game.currentBidder = player
+                    bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
         if skippedPlayers:
             for player in skippedPlayers:
                 playerOrder.pop(playerOrder.index(player))
@@ -650,105 +622,6 @@ def createBot():
                     if game.roundSuit is None:
                         game.setRoundSuit(count+1, playedCard.suit)
                         deck._setRoundRules(game)
-
-    def createMarkupBid():
-        markup = ReplyKeyboardMarkup(row_width=5)
-        # Add Numbers
-        for i in range(4):
-            markup.add(
-                *[KeyboardButton(f'{i+1}{suit}') for suit in ['♣', '♦', '♥', '♠', 'NT']]
-            )
-        markup.add(
-            KeyboardButton('Pass'), KeyboardButton('Your Cards')
-        )
-        return markup
-
-    def createMarkupPlay(cards, showAll):
-        n = len(cards)
-        if n > 3:
-            if n == 4:
-                grid = [2,2]
-            elif n == 5:
-                grid = [3,2]
-            elif n == 6:
-                grid = [3,3]
-            elif n == 7:
-                grid = [4,3]
-            elif n == 8:
-                grid = [4,4]
-            elif n == 9:
-                grid = [3,3,3]
-            elif n == 10:
-                grid = [4,3,3]
-            elif n == 11:
-                grid = [4,4,3]
-            elif n == 12:
-                grid = [4,4,4]
-            else:
-                grid = [4,3,3,3]
-        else:
-            grid = [n]
-
-        markup = ReplyKeyboardMarkup(row_width=grid[0])
-        count = 0
-        for row in grid:
-            markup.add(
-                *[KeyboardButton(str(cards[i+sum(grid[:count])]).strip()) for i in range(row)]
-            )
-            count += 1
-        if showAll:
-            markup.add(KeyboardButton('Back'))
-        else:
-            markup.add(KeyboardButton('Your Cards'))
-        return markup
-
-    def createMarkupHand(cards):
-        markup = ReplyKeyboardMarkup(row_width=4)
-        hand = Deck.showBySuit(cards)
-        suits = Suit._member_names_[:4]
-        # Add header
-        markup.add(
-            *[KeyboardButton(f'{cardMappings[suit]}') for suit in suits]
-        )
-        n = max([len(i) for i in hand.values()])
-        for i in range(n):
-            markup.add(
-                *[KeyboardButton(f'{hand[suit][i]}') if len(hand[suit]) > i else KeyboardButton('-') for suit in suits]
-            )
-        markup.add(
-            KeyboardButton('Back')
-        )
-        return markup
-
-    def createMarkupSuits():
-        markup = ReplyKeyboardMarkup(row_width=2)
-        suits = Suit._member_names_[3::-1]
-        grid = [2,2]
-        count = 0
-        for row in grid:
-            markup.add(
-                *[KeyboardButton(f'{cardMappings[suits[count+i]]}') for i in range(row)]
-            )
-            count += row
-        markup.add(
-            KeyboardButton('Back'), KeyboardButton('Your Cards')
-        )
-        return markup
-
-    def createMarkupRanks():
-        markup = ReplyKeyboardMarkup(row_width=4)
-        ranks = Rank._member_names_[::-1]
-        grid = [4,3,3,3]
-        count = 0
-        for row in grid:
-            markup.add(
-                *[KeyboardButton(f'{cardMappings[ranks[count+i]]}') for i in range(row)]
-            )
-            count += row
-        markup.add(
-            KeyboardButton('Back'), KeyboardButton('Your Cards')
-        )
-        return markup
 
     return bot
     
