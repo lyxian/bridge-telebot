@@ -130,38 +130,17 @@ def createBot():
             'choosePartnerSuit': False,
             'choosePartnerRank': False,
             'winningBidder': None,
-            'player': A
+            'player': A,
+            'skippedPlayers': []
         }
             
-        skippedPlayers = []
         bot.send_message(message.chat.id, f'Round bidders: {[i.name for i in playerOrder]}')
-        # telebot.logger.debug(f'Round bidders: {[i.name for i in playerOrder]}')
 
         for player in playerOrder:
             bid = player.bid(game)
-            if isinstance(player, Player):
-                idx = playerOrder.index(player)
-                if idx != 3:
-                    db[message.chat.id]['remainingPlayers'] = playerOrder[idx+1:]
-                else:
-                    db[message.chat.id]['remainingPlayers'] = None
-                if skippedPlayers:
-                    for player in skippedPlayers:
-                        playerOrder.pop(playerOrder.index(player))
-                    db[message.chat.id]['playerOrder'] = playerOrder
+            if processBid(message, game, player, bid):
                 break
-            else:
-                if bid == 'Pass':
-                    skippedPlayers.append(player)
-                    bot.send_message(message.chat.id, f'{player.name} passed\n')
-                else:
-                    game.currentBid = bid
-                    game.currentBidder = player
-                    bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
-        if skippedPlayers:
-            for player in skippedPlayers:
-                playerOrder.pop(playerOrder.index(player))
-            db[message.chat.id]['playerOrder'] = playerOrder
+        skipPlayers(message, db[message.chat.id]['skippedPlayers'])
 
     def messageFilter(message, mode):
         # Check if user has existing game
@@ -222,10 +201,10 @@ def createBot():
         playerOrder = db[message.chat.id]['playerOrder']
         remainingPlayers = db[message.chat.id]['remainingPlayers']
         continueBidding = db[message.chat.id]['continueBidding']
+        skippedPlayers = db[message.chat.id]['skippedPlayers']
         
         # Process player's bid
         text = message.text
-        skippedPlayers = []
         if text == 'Your Cards':
             bot.send_message(message.chat.id, 'Your Cards', reply_markup=createMarkupHand(user.hand))
             return
@@ -235,7 +214,6 @@ def createBot():
         elif text == 'Pass':
             skippedPlayers.append(user)
             bot.send_message(message.chat.id, f'{user.name} passed\n')
-
             if remainingPlayers:
                 for player in remainingPlayers:
                     if game.currentBidder and game.currentBidder == player:
@@ -244,21 +222,10 @@ def createBot():
                         game.askPlayer(player)
                         break
                     bid = player.bid(game)
-                    if bid == 'Pass':
-                        skippedPlayers.append(player)
-                        bot.send_message(message.chat.id, f'{player.name} passed\n')
-                        # telebot.logger.debug(f'{player.name} passed\n')
-                    else:
-                        game.currentBid = bid
-                        game.currentBidder = player
-                        bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
-            if skippedPlayers:
-                for player in skippedPlayers:
-                    playerOrder.pop(playerOrder.index(player))
-                db[message.chat.id]['playerOrder'] = playerOrder
+                    if processBid(message, game, player, bid):
+                        break
+            skipPlayers(message, db[message.chat.id]['skippedPlayers'])
             while continueBidding:
-                skippedPlayers = []
-                # bot.send_message(message.chat.id, f'Round bidders: {[i.name for i in playerOrder]}')
                 for player in playerOrder:
                     if game.currentBidder and game.currentBidder == player:
                         continueBidding = False
@@ -266,37 +233,12 @@ def createBot():
                         game.askPlayer(player)
                         break
                     bid = player.bid(game)
-                    if bid == 'Pass':
-                        skippedPlayers.append(player)
-                        bot.send_message(message.chat.id, f'{player.name} passed\n')
-                    else:
-                        game.currentBid = bid
-                        game.currentBidder = player
-                        bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
-                    
-                if skippedPlayers:
-                    for player in skippedPlayers:
-                        playerOrder.pop(playerOrder.index(player))
-                    db[message.chat.id]['playerOrder'] = playerOrder
+                    if processBid(message, game, player, bid):
+                        break
+                skipPlayers(message, db[message.chat.id]['skippedPlayers'])
                 time.sleep(0.5)
-                
-            # ==Post-Bidding==
-            trump = game.currentBid.suit
-            game.setTrump(trump)
-            deck._setGameRules(game)
-            db[message.chat.id]['continueBidding'] = continueBidding
-            db[message.chat.id]['firstPlayer'] = game.getPlayerOrder(winningBidder)[1]
-            telebot.logging.debug(db[message.chat.id]['remainingPlayers'])
-            db[message.chat.id]['remainingPlayers'] = None
-
-            if winningBidder.likelyPartner.owner == user:
-                bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} (YOU)')
-            else:
-                bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
-            bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
-            startPlay(message)
+            postBidding(message, game, deck, winningBidder, user)
             return '', 200
-            # telebot.logger.debug(f'{player.name} passed\n')
         else:
             # Validate bid
             bid = Bid(int(text[0]), cardMappings[text[1:]])
@@ -309,22 +251,12 @@ def createBot():
                 return
 
         # Let remaining players bid for current round
-        skippedPlayers = []
         if remainingPlayers:
             for player in remainingPlayers:
                 bid = player.bid(game)
-                if bid == 'Pass':
-                    skippedPlayers.append(player)
-                    bot.send_message(message.chat.id, f'{player.name} passed\n')
-                    # telebot.logger.debug(f'{player.name} passed\n')
-                else:
-                    game.currentBid = bid
-                    game.currentBidder = player
-                    bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
-            if skippedPlayers:
-                for player in skippedPlayers:
-                    playerOrder.pop(playerOrder.index(player))
-                db[message.chat.id]['playerOrder'] = playerOrder
+                if processBid(message, game, player, bid):
+                    break
+            skipPlayers(message, db[message.chat.id]['skippedPlayers'])
 
         for player in playerOrder:
             if game.currentBidder and game.currentBidder == player:
@@ -341,46 +273,13 @@ def createBot():
                         db[message.chat.id]['choosePartnerSuit'] = True
                         bot.send_message(message.chat.id, f'Choose partner suit: ', reply_markup=createMarkupSuits())
                     break
-                # ==Post-Bidding==
-                game.setTrump(game.currentBid.suit)
-                deck._setGameRules(game)
-                db[message.chat.id]['continueBidding'] = continueBidding
-                # db[message.chat.id]['remainingPlayers'] = None
-
-                if winningBidder.likelyPartner.owner == user:
-                    bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} (YOU)')
-                else:
-                    bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
-                bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
-                startPlay(message)
+                postBidding(message, game, deck, winningBidder, user)
                 return '', 200
             bid = player.bid(game)
-            if isinstance(player, Player):
-                idx = playerOrder.index(player)
-                if idx != 3:
-                    db[message.chat.id]['remainingPlayers'] = playerOrder[idx+1:]
-                else:
-                    db[message.chat.id]['remainingPlayers'] = None
-                if skippedPlayers:
-                    for player in skippedPlayers:
-                        playerOrder.pop(playerOrder.index(player))
-                    db[message.chat.id]['playerOrder'] = playerOrder
+            if processBid(message, game, player, bid):
                 break
-            else:
-                if bid == 'Pass':
-                    skippedPlayers.append(player)
-                    bot.send_message(message.chat.id, f'{player.name} passed\n')
-                    db[message.chat.id]['playerOrder'] = playerOrder
-                else:
-                    game.currentBid = bid
-                    game.currentBidder = player
-                    bot.send_message(message.chat.id, f'Current bid by {player.name} is: {bid}\n')
-        if skippedPlayers:
-            for player in skippedPlayers:
-                playerOrder.pop(playerOrder.index(player))
-            db[message.chat.id]['playerOrder'] = playerOrder
-        return '', 200
-            
+        skipPlayers(message, db[message.chat.id]['skippedPlayers'])
+
     @bot.message_handler(func=lambda message: messageFilter(message, Filter.replyPartnerSuit))
     def _replyPartnerSuit(message):
         winningBidder = db[message.chat.id]['winningBidder']
@@ -622,6 +521,47 @@ def createBot():
                     if game.roundSuit is None:
                         game.setRoundSuit(count+1, playedCard.suit)
                         deck._setRoundRules(game)
+                        
+    # Helper Functions
+    def processBid(message, game, player, bid):
+        if isinstance(player, Player):
+            idx = db[message.chat.id]['playerOrder'].index(player)
+            if idx != 3:
+                db[message.chat.id]['remainingPlayers'] = db[message.chat.id]['playerOrder'][idx+1:]
+            else:
+                db[message.chat.id]['remainingPlayers'] = None
+            return True
+        else:
+            if bid == 'Pass':
+                db[message.chat.id]['skippedPlayers'].append(player)
+                botMessage = f'{player.name} passed\n'
+            else:
+                game.currentBid = bid
+                game.currentBidder = player
+                botMessage = f'Current bid by {player.name} is: {bid}\n'
+            bot.send_message(message.chat.id, botMessage)
+            return False
+
+    def skipPlayers(message, skippedPlayers):
+        if skippedPlayers:
+            for player in skippedPlayers:
+                idx = db[message.chat.id]['playerOrder'].index(player)
+                db[message.chat.id]['playerOrder'].pop(idx)
+            db[message.chat.id]['skippedPlayers'] = []
+        return
+    
+    def postBidding(message, game, deck, winningBidder, user):
+        # ==Post-Bidding==
+        game.setTrump(game.currentBid.suit)
+        deck._setGameRules(game)
+        db[message.chat.id]['continueBidding'] = False
+
+        if winningBidder.likelyPartner.owner == user:
+            bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner} (YOU)')
+        else:
+            bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
+        bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
+        startPlay(message)
 
     return bot
     
