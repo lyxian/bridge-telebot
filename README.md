@@ -69,9 +69,10 @@
 11. check for valid key after idle
 12. update NT rules (ok)
 13. set webhook on Heroku aft init (ok)
-14. show all cards option during play
-15. show partner in pinnedMessage
-16. fix invalid bid showing hand
+14. show all cards option during play (ok)
+15. show partner in pinnedMessage (ok)
+16. fix invalid bid showing hand (ok)
+17. end game early
 
 **v3** (pending)
 
