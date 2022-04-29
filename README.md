@@ -72,7 +72,8 @@
 14. show all cards option during play (ok)
 15. show partner in pinnedMessage (ok)
 16. fix invalid bid showing hand (ok)
-17. end game early
+17. end game early (ok)
+18. turn off early game option (ok)
 
 **v3** (pending)
 

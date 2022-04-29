@@ -68,6 +68,17 @@ def createBot():
         bot.send_message(message.chat.id, text, reply_markup=ReplyKeyboardRemove())
         return
 
+    @bot.message_handler(commands=["setearlygame"])
+    def _setEarlyGame(message):
+        if message.chat.id in db.keys():
+            db[message.chat.id]['earlyGame'] = not db[message.chat.id]['earlyGame']
+            if db[message.chat.id]['earlyGame']:
+                text = 'Early Game: On'
+            else:
+                text = 'Early Game: Off'
+            bot.send_message(message.chat.id, text)
+        return
+
     @bot.message_handler(commands=["quitgame"])
     def _quitGame(message):
         if message.chat.id in db.keys():
@@ -131,7 +142,8 @@ def createBot():
             'choosePartnerRank': False,
             'winningBidder': None,
             'player': A,
-            'skippedPlayers': []
+            'skippedPlayers': [],
+            'earlyGame': True
         }
             
         bot.send_message(message.chat.id, f'Round bidders: {[i.name for i in playerOrder]}')
@@ -474,7 +486,7 @@ def createBot():
 
         db[message.chat.id]['count'] += 1
         count = db[message.chat.id]['count']
-        if game._hasEnded or count >= 13:
+        if (db[message.chat.id]['earlyGame'] and game._hasEnded) or count >= 13:
             bot.send_message(message.chat.id, f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}', reply_markup=ReplyKeyboardRemove())
             bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
             db[message.chat.id] = {}
