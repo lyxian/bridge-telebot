@@ -1,10 +1,17 @@
 from abc import ABC, abstractmethod
 from random import sample
 from card import Bid, Card, Deck, Rank, Suit
+from utils import getToken, createMarkupHand
+import requests
+
+def callTelegramAPI(method, params):
+    url = 'https://api.telegram.org/bot{}/{}'.format(getToken(), method)
+    response = requests.post(url=url, params=params)
+    return response.json()
 
 class Game():
 
-    def __init__(self, players, deck):
+    def __init__(self, players, deck, chatId):
         self.deck = deck
         self.players = players
         self.currentBid = None
@@ -13,6 +20,7 @@ class Game():
         self.otherTeam = None
         self.brokeTrump = False
         self.roundCount = 0
+        self.chatId = chatId
 
     @property
     def _results(self):
@@ -213,18 +221,15 @@ class Player(PlayerBase):
         self.likelyPartner = card
 
     def bid(self, game):
-        print(Deck.showBySuitStr(self.hand))
-        minBid = input('Enter min. bid: ')
-        if minBid == 'Pass':
-            return minBid
-        bestSuit = input('Enter suit: ')
-        if bestSuit == 'Pass':
-            return bestSuit
-        bidObj = Bid(int(minBid), bestSuit)
-        if game.currentBid is None or game.currentBid < bidObj:
-            return bidObj
-        else:
-            return 'Pass'
+        method = 'sendMessage'
+        params = {
+            'chat_id': game.chatId,
+            'text': 'Your Cards',
+            'reply_markup': createMarkupHand(self.hand).to_json()
+        }
+        print(params)
+        print(callTelegramAPI(method, params))
+        # self.bot.send_message(game.chatId, 'Your Cards', reply_markup=createMarkupHand(self.hand))
 
     def play(self, game):
         if self.canFollow(game):

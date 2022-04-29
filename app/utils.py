@@ -3,6 +3,11 @@ import pymongo
 import yaml
 import os
 
+def getToken():
+    key = bytes(os.getenv("KEY"), "utf-8")
+    encrypted = bytes(os.getenv("SECRET_TELEGRAM"), "utf-8")
+    return Fernet(key).decrypt(encrypted).decode()
+
 def loadConfig():
     try:
         with open('config.yaml', 'r') as stream:
@@ -68,6 +73,109 @@ class Filter(Enum):
     replyBid = 3
     replyPlayerPartner = 4
     replyPlay = 5
+
+# Reply Markups
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from card import Deck, Rank, Suit, cardMappings
+
+def createMarkupBid():
+    markup = ReplyKeyboardMarkup(row_width=5)
+    # Add Numbers
+    for i in range(4):
+        markup.add(
+            *[KeyboardButton(f'{i+1}{suit}') for suit in ['♣', '♦', '♥', '♠', 'NT']]
+        )
+    markup.add(
+        KeyboardButton('Pass'), KeyboardButton('Your Cards')
+    )
+    return markup
+
+def createMarkupPlay(cards, showAll):
+    n = len(cards)
+    if n > 3:
+        if n == 4:
+            grid = [2,2]
+        elif n == 5:
+            grid = [3,2]
+        elif n == 6:
+            grid = [3,3]
+        elif n == 7:
+            grid = [4,3]
+        elif n == 8:
+            grid = [4,4]
+        elif n == 9:
+            grid = [3,3,3]
+        elif n == 10:
+            grid = [4,3,3]
+        elif n == 11:
+            grid = [4,4,3]
+        elif n == 12:
+            grid = [4,4,4]
+        else:
+            grid = [4,3,3,3]
+    else:
+        grid = [n]
+
+    markup = ReplyKeyboardMarkup(row_width=grid[0])
+    count = 0
+    for row in grid:
+        markup.add(
+            *[KeyboardButton(str(cards[i+sum(grid[:count])]).strip()) for i in range(row)]
+        )
+        count += 1
+    if showAll:
+        markup.add(KeyboardButton('Back'))
+    else:
+        markup.add(KeyboardButton('Your Cards'))
+    return markup
+
+def createMarkupHand(cards):
+    markup = ReplyKeyboardMarkup(row_width=4)
+    hand = Deck.showBySuit(cards)
+    suits = Suit._member_names_[:4]
+    # Add header
+    markup.add(
+        *[KeyboardButton(f'{cardMappings[suit]}') for suit in suits]
+    )
+    n = max([len(i) for i in hand.values()])
+    for i in range(n):
+        markup.add(
+            *[KeyboardButton(f'{hand[suit][i]}') if len(hand[suit]) > i else KeyboardButton('-') for suit in suits]
+        )
+    markup.add(
+        KeyboardButton('Back')
+    )
+    return markup
+
+def createMarkupSuits():
+    markup = ReplyKeyboardMarkup(row_width=2)
+    suits = Suit._member_names_[3::-1]
+    grid = [2,2]
+    count = 0
+    for row in grid:
+        markup.add(
+            *[KeyboardButton(f'{cardMappings[suits[count+i]]}') for i in range(row)]
+        )
+        count += row
+    markup.add(
+        KeyboardButton('Back'), KeyboardButton('Your Cards')
+    )
+    return markup
+
+def createMarkupRanks():
+    markup = ReplyKeyboardMarkup(row_width=4)
+    ranks = Rank._member_names_[::-1]
+    grid = [4,3,3,3]
+    count = 0
+    for row in grid:
+        markup.add(
+            *[KeyboardButton(f'{cardMappings[ranks[count+i]]}') for i in range(row)]
+        )
+        count += row
+    markup.add(
+        KeyboardButton('Back'), KeyboardButton('Your Cards')
+    )
+    return markup
 
 if __name__ == '__main__':
     pass

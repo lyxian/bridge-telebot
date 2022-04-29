@@ -205,5 +205,12 @@ class Deck:
     def getLowestCard(cards):
         return sorted(cards)[0]
 
+    @staticmethod
+    def findCard(cards, suit, rank):
+        for card in cards:
+            if card.suit == suit and card.rank == rank:
+                return card
+        return None
+
 if __name__ == '__main__':
     pass
