@@ -130,6 +130,14 @@ class Card:
     def _serialize(self):
         return {k:(v.name if 'user' in str(type(v)) else v) for k,v in vars(self).items()}
 
+    @staticmethod
+    def loadCard(payload, owner):
+        card = Card(payload['rank'], payload['suit'])
+        card.isTrump = payload['isTrump']
+        card.isRoundSuit = payload['isRoundSuit']
+        card.owner = owner
+        return card
+
 class Deck:
 
     def __init__(self):

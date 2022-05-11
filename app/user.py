@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from random import sample
 from card import Bid, Card, Deck, Rank, Suit
-from utils import getToken, createMarkupHand
+from utils import getToken, createMarkupHand, MongoDb, loadConfig
 import requests
 
 def callTelegramAPI(method, params):
@@ -21,6 +21,7 @@ class Game():
         self.brokeTrump = False
         self.roundCount = 0
         self.chatId = chatId
+        # self.saveGame
 
     @property
     def _results(self):
@@ -70,11 +71,25 @@ class Game():
             'currentBidder': self.currentBidder.name if self.currentBidder else self.currentBidder,
             'biddingTeam': [_._serialize for _ in self.biddingTeam] if self.biddingTeam else self.biddingTeam,
             'otherTeam': [_._serialize for _ in self.otherTeam] if self.otherTeam else self.otherTeam,
-            'brokeTrump': '',
+            'brokeTrump': False,
             'roundCount': self.roundCount,
             'chatId': self.chatId
         }
 
+    @property
+    def saveGame(self):
+        obj = MongoDb(loadConfig())        
+        if obj.has(self.chatId):
+            obj.collection.delete_one({'chatId': self.chatId})
+            obj.collection.insert_one(self._serialize)
+            print(f'Replaced {self.chatId} in DB')
+        else:
+            obj.collection.insert_one(self._serialize)
+            print(f'Added {self.chatId} to DB')
+
+    @staticmethod
+    def loadGame(payload):
+        pass
 
     def getPlayerOrder(self, firstPlayer):
         playersArray = self.players + self.players[:-1]
@@ -123,6 +138,7 @@ class PlayerBase(ABC):
         self.name = name
         self.hand = cards
         self.partner = None
+        self.likelyPartner = None
         self.tricks = 0
         self.availableCards = cards
 
@@ -146,7 +162,7 @@ class PlayerBase(ABC):
     def _serialize(self):
         cardTypes = ['hand', 'availableCards']
         return {
-            k: ((v.name if v else v) if k == 'partner' else [i._serialize for i in v] if k in cardTypes else v)
+            k: ((v.name if v else v) if k == 'partner' else str(v).strip() if k == 'likelyPartner' else [i._serialize for i in v] if k in cardTypes else v)
             for k,v in vars(self).items()
         }
 
@@ -164,6 +180,19 @@ class PlayerBase(ABC):
     @abstractmethod
     def play(self, game):
         return
+
+    @staticmethod
+    def loadPlayer(payload):
+        name = payload['name']
+        if name == 'YOU':
+            player = Player(name, [])
+        else:
+            player = Bot(name, [])
+        player.hand = [Card.loadCard(card, player) for card in payload['hand']]
+        player.tricks = payload['tricks']
+        player.partner = payload['partner']
+        player.likelyPartner = payload['likelyPartner']
+        return player
 
 class Bot(PlayerBase):
     
