@@ -77,6 +77,8 @@
 **v3** (pending)
 
 1. mongoDB integration
+   a. serialize <Game>
+   b. push to mongo
 
 # Telegram
 

@@ -125,6 +125,10 @@ class Card:
                 return True
             else:
                 return Suit[self.suit].value < Suit[other.suit].value
+                
+    @property
+    def _serialize(self):
+        return {k:(v.name if 'user' in str(type(v)) else v) for k,v in vars(self).items()}
 
 class Deck:
 
@@ -142,9 +146,6 @@ class Deck:
     def _setGameRules(self, game):
         for card in self.deck:
             card.isTrump = card.suit == game.trump
-        for player in game.players:
-            for card in player.hand:
-                card.owner = player
         game.setTeams()
 
     def _setRoundRules(self, game):
@@ -156,6 +157,8 @@ class Deck:
             self._shuffle
             for i in range(4):
                 players[i].hand = sorted(self.deck[13*i:13*(i+1)])
+                for card in players[i].hand:
+                    card.owner = players[i]
             print('Deck distributed.')
         else:
             raise IncorrectPlayerCount

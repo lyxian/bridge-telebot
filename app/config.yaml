@@ -2,7 +2,7 @@
 
 query:
   database: bridge-telebot
-  collection: players
+  collection: games
 application:
   name: bridge-telebot
   database:

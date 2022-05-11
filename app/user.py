@@ -60,6 +60,21 @@ class Game():
         else:
             return False
 
+    @property
+    def _serialize(self):
+        # Check if all values 
+        return {
+            'deck': [_._serialize for _ in self.deck.deck],
+            'players': [_._serialize for _ in self.players],
+            'currentBid': str(self.currentBid),
+            'currentBidder': self.currentBidder.name if self.currentBidder else self.currentBidder,
+            'biddingTeam': [_._serialize for _ in self.biddingTeam] if self.biddingTeam else self.biddingTeam,
+            'otherTeam': [_._serialize for _ in self.otherTeam] if self.otherTeam else self.otherTeam,
+            'brokeTrump': '',
+            'roundCount': self.roundCount,
+            'chatId': self.chatId
+        }
+
 
     def getPlayerOrder(self, firstPlayer):
         playersArray = self.players + self.players[:-1]
@@ -127,6 +142,14 @@ class PlayerBase(ABC):
     def _handStrength(self):
         return Deck.showStrength(self.hand)
 
+    @property
+    def _serialize(self):
+        cardTypes = ['hand', 'availableCards']
+        return {
+            k: ((v.name if v else v) if k == 'partner' else [i._serialize for i in v] if k in cardTypes else v)
+            for k,v in vars(self).items()
+        }
+
     def getBestSuit(self, num=0):
         return sorted(Deck.showSuitStrength(self.hand).items(), key=lambda x: x[1], reverse=True)[num][0]
 
@@ -146,7 +169,6 @@ class Bot(PlayerBase):
     
     def __init__(self, name, cards=[]):
         super().__init__(name, cards)
-        self.partner = None
 
     def bid(self, game):
         handBySuit = Deck.showBySuit(self.hand)
