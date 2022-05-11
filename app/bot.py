@@ -7,7 +7,7 @@ import re
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from card import Bid, Card, Deck, Rank, Suit, cardMappings
 from user import Game, Player, Bot
-from utils import getToken, Filter, createMarkupBid, createMarkupPlay, createMarkupHand, createMarkupSuits, createMarkupRanks
+from utils import getToken, Filter, createMarkupBid, createMarkupPlay, createMarkupHand, createMarkupSuits, createMarkupRanks, MongoDb, loadConfig
 
 # Commands
 # /start
@@ -90,6 +90,37 @@ def createBot():
                 response = callTelegramAPI(method, params)
         bot.send_message(message.chat.id, 'OK', reply_markup=ReplyKeyboardRemove())
         return
+        
+    @bot.message_handler(commands=["loadgame"])
+    def _loadGame(message):
+        obj = MongoDb(loadConfig())
+        query = {'chatId': 315498839}
+        payload = obj.collection.find_one(query)
+        
+        # Load players
+        players = []
+        for player in payload['players']:
+            players.append(Player.loadPlayer(player))
+
+        # Load deck
+        deck = Deck()
+        deck.deck = []
+        _ = [deck.deck.append(card) for player in players for card in player.hand]
+
+        # Load game
+        game = Game(players, deck, payload['chatId'])
+        game.currentBid = Bid(int(payload['currentBid'][0]), cardMappings[payload['currentBid'][1:]])
+        game.currentBidder = [player for player in players if player.name == payload['currentBidder']][0]
+        partnerCard = game.currentBidder.likelyPartner
+        game.currentBidder.likelyPartner = [card for card in deck.deck if card.rank == cardMappings[partnerCard[:-1]] and card.suit == cardMappings[partnerCard[-1]]][0]
+        game.setTeams()
+        game.brokeTrump = True if payload['brokeTrump'] else False
+        game.roundCount = payload['roundCount']
+
+        game.setTrump(game.currentBid.suit)
+        deck._setGameRules(game)
+
+        startPlay(message)
 
     @bot.message_handler(commands=["startgame"])
     def _startGame(message):
@@ -110,6 +141,7 @@ def createBot():
 
         # ==Bidding==
         game = Game(players, deck, message.chat.id)
+        game.saveGame
         firstPlayer = game._randomPlayer
         playerOrder = game.getPlayerOrder(firstPlayer)
         
@@ -323,14 +355,7 @@ def createBot():
                 bot.send_message(message.chat.id, f'{cardStr} found in hand, choose again.', reply_markup=createMarkupSuits())
             else:
                 winningBidder.setLikelyPartner(Deck.findCard(game.deck.deck, suit, rank))
-                # ==Post-Bidding==
-                game.setTrump(game.currentBid.suit)
-                deck._setGameRules(game)
-                db[message.chat.id]['continueBidding'] = False
-
-                bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
-                bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
-                startPlay(message)
+                postBidding(message, game, deck, winningBidder, winningBidder)
 
     def startPlay(message):
         # ==Playing==
@@ -451,6 +476,7 @@ def createBot():
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
             bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
+            game.saveGame
         else: #if db[message.chat.id]['remainingPlayers']:
             for player in db[message.chat.id]['remainingPlayers']:
                 playedCard = player.play(game)
@@ -471,6 +497,7 @@ def createBot():
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
             bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
+            game.saveGame
 
         db[message.chat.id]['count'] += 1
         count = db[message.chat.id]['count']
@@ -561,6 +588,7 @@ def createBot():
         else:
             bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
         bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
+        game.saveGame
         startPlay(message)
 
     return bot
