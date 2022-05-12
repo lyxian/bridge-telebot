@@ -54,7 +54,7 @@ def createBot():
         else:
             method = 'getChat'
             params = {
-                'chat_id': 315498839
+                'chat_id': message.chat.id
             }
             response = callTelegramAPI(method, params)
             if 'pinned_message' in response.json()['result']:
@@ -77,7 +77,7 @@ def createBot():
         else:
             method = 'getChat'
             params = {
-                'chat_id': 315498839
+                'chat_id': message.chat.id
             }
             response = callTelegramAPI(method, params)
             if 'pinned_message' in response.json()['result']:
@@ -94,7 +94,7 @@ def createBot():
     @bot.message_handler(commands=["loadgame"])
     def _loadGame(message):
         obj = MongoDb(loadConfig())
-        query = {'chatId': 315498839}
+        query = {'chatId': message.chat.id}
         payload = obj.collection.find_one(query)
         
         # Load players
@@ -120,6 +120,35 @@ def createBot():
         game.setTrump(game.currentBid.suit)
         deck._setGameRules(game)
 
+        method = 'getChat'
+        params = {
+            'chat_id': message.chat.id
+        }
+        response = callTelegramAPI(method, params)
+        if 'pinned_message' in response.json()['result']:
+            pinnedMessageId = response.json()['result']['pinned_message']['message_id']
+            method = 'unpinChatMessage'
+            params = {
+                'message_id': pinnedMessageId,
+                **params
+            }
+            response = callTelegramAPI(method, params)
+        bot.send_message(message.chat.id, game._playerResults)
+        bot.pin_chat_message(message.chat.id, message.id+1)
+
+        db[message.chat.id] = {
+            'pinnedMessageId': message.id+1,
+            'game': game,
+            'deck': deck,
+            'players': players,
+            'playerOrder': None,
+            'continueBidding': False,
+            'choosePartnerSuit': False,
+            'choosePartnerRank': False,
+            'winningBidder': game.currentBidder,
+            'player': [player for player in players if isinstance(player, Player)][0],
+            'skippedPlayers': []
+        }
         startPlay(message)
 
     @bot.message_handler(commands=["startgame"])
@@ -476,7 +505,7 @@ def createBot():
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
             bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
-            game.saveGame
+            # game.saveGame
         else: #if db[message.chat.id]['remainingPlayers']:
             for player in db[message.chat.id]['remainingPlayers']:
                 playedCard = player.play(game)
@@ -497,7 +526,7 @@ def createBot():
             firstPlayer.tricks += 1
             playerOrder = game.getPlayerOrder(firstPlayer)
             bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
-            game.saveGame
+            # game.saveGame
 
         db[message.chat.id]['count'] += 1
         count = db[message.chat.id]['count']
@@ -588,7 +617,7 @@ def createBot():
         else:
             bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
         bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
-        game.saveGame
+        # game.saveGame
         startPlay(message)
 
     return bot

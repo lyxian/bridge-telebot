@@ -79,6 +79,7 @@
 1. mongoDB integration
    a. serialize <Game>
    b. push to mongo
+   c. loadgame command
 
 # Telegram
 
