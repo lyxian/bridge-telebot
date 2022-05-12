@@ -89,13 +89,37 @@ def createBot():
                 }
                 response = callTelegramAPI(method, params)
         bot.send_message(message.chat.id, 'OK', reply_markup=ReplyKeyboardRemove())
+        db.pop(message.chat.id)
         return
+        
+    @bot.message_handler(commands=["savegame"])
+    def _saveGame(message):
+        if message.chat.id in db.keys():
+            if 'game' in db[message.chat.id].keys():
+                game = db[message.chat.id]['game']
+                game.saveGameBackup
+            else:
+                telebot.logger.debug('No game to save')
+        else:
+            telebot.logger.debug('No game to save')
         
     @bot.message_handler(commands=["loadgame"])
     def _loadGame(message):
+        loadGame(message, isBackup=True)
+
+    def loadGame(message, isBackup):
         obj = MongoDb(loadConfig())
-        query = {'chatId': message.chat.id}
-        payload = obj.collection.find_one(query)
+        if isBackup:
+            print('===Loading backup game===')
+            dbChatId = f'{message.chat.id}_save'
+        else:
+            print('===Continuing previous game===')
+            dbChatId = message.chat.id
+        if obj.has(dbChatId):
+            query = {'chatId': dbChatId}
+        else:
+            query = {'chatId': message.chat.id}
+        payload = obj.collection.find_one(query) # TODO - handle empty payload
         
         # Load players
         players = []
@@ -157,6 +181,11 @@ def createBot():
         if message.chat.id in db.keys():
             if db[message.chat.id] != {}:
                 return
+        else:
+            # Load saved game
+            if Game.hasSaveGame(message.chat.id):
+                loadGame(message, isBackup=False)
+                return
 
         # ===Game Start===
         deck = Deck()
@@ -170,7 +199,7 @@ def createBot():
 
         # ==Bidding==
         game = Game(players, deck, message.chat.id)
-        game.saveGame
+        # game.saveGame
         firstPlayer = game._randomPlayer
         playerOrder = game.getPlayerOrder(firstPlayer)
         
@@ -534,6 +563,7 @@ def createBot():
             bot.send_message(message.chat.id, f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}', reply_markup=ReplyKeyboardRemove())
             bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
             db[message.chat.id] = {}
+            game.rmSaveGame
         else:
             playerOrder = game.getPlayerOrder(firstPlayer)
             game.setRoundSuit(count)
@@ -617,7 +647,7 @@ def createBot():
         else:
             bot.send_message(message.chat.id, f'\nFinal Bid by {winningBidder.name}: {game.currentBid}, Partner = {winningBidder.likelyPartner}')
         bot.edit_message_text(game._playerResults, message.chat.id, db[message.chat.id]['pinnedMessageId'])
-        # game.saveGame
+        game.saveGame
         startPlay(message)
 
     return bot

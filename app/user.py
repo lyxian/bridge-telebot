@@ -3,6 +3,7 @@ from random import sample
 from card import Bid, Card, Deck, Rank, Suit
 from utils import getToken, createMarkupHand, MongoDb, loadConfig
 import requests
+import pendulum
 
 def callTelegramAPI(method, params):
     url = 'https://api.telegram.org/bot{}/{}'.format(getToken(), method)
@@ -73,12 +74,13 @@ class Game():
             'otherTeam': [_._serialize for _ in self.otherTeam] if self.otherTeam else self.otherTeam,
             'brokeTrump': False,
             'roundCount': self.roundCount,
-            'chatId': self.chatId
+            'chatId': self.chatId,
+            'time': pendulum.now().to_datetime_string()
         }
 
     @property
     def saveGame(self):
-        obj = MongoDb(loadConfig())        
+        obj = MongoDb(loadConfig())
         if obj.has(self.chatId):
             obj.collection.delete_one({'chatId': self.chatId})
             obj.collection.insert_one(self._serialize)
@@ -86,6 +88,35 @@ class Game():
         else:
             obj.collection.insert_one(self._serialize)
             print(f'Added {self.chatId} to DB')
+
+    @property
+    def saveGameBackup(self):
+        obj = MongoDb(loadConfig())
+        saveId = f'{self.chatId}_save'
+        payload = self._serialize
+        payload['chatId'] = saveId
+        payload['roundCount'] = payload['roundCount'] - 1
+        if obj.has(saveId):
+            obj.collection.delete_one({'chatId': saveId})
+            obj.collection.insert_one(payload)
+            print(f'Replaced {saveId} in DB')
+        else:
+            obj.collection.insert_one(payload)
+            print(f'Added {saveId} to DB')
+
+    @property
+    def rmSaveGame(self):
+        obj = MongoDb(loadConfig())
+        if 'save' in self.chatId:
+            return
+        if obj.has(self.chatId):
+            obj.collection.delete_one({'chatId': self.chatId})
+            print(f'Removed {self.chatId} in DB')
+
+    @staticmethod
+    def hasSaveGame(chatId):
+        obj = MongoDb(loadConfig())
+        return obj.has(chatId)
 
     @staticmethod
     def loadGame(payload):
@@ -240,7 +271,7 @@ class Bot(PlayerBase):
         if self.canFollow(game):
             self.availableCards = [_ for _ in self.hand if _.suit == game.roundSuit]
         else:
-            if game.roundCount == 0 or (not game.brokeTrump and not game.playedCards):
+            if game.roundCount == 0 or (not game.brokeTrump and not game.playedCards): # TODO - has bug if not brokeTrump and first player
                 # print('No trump allowed')
                 self.availableCards = [_ for _ in self.hand if _.suit != game.trump]
             else:
@@ -260,8 +291,11 @@ class Bot(PlayerBase):
                 cardPlayed = Deck.getLowestCard(self.availableCards)
                 return self.hand.pop(self._handIndex[str(cardPlayed).strip()])
         else:
-            cardPlayed = Deck.getLowestCard(self.availableCards)
-            return self.hand.pop(self._handIndex[str(cardPlayed).strip()])
+            try:
+                cardPlayed = Deck.getLowestCard(self.availableCards)
+                return self.hand.pop(self._handIndex[str(cardPlayed).strip()])
+            except:
+                print(f'***************{self.name} has no card to played***************')
 
 class Player(PlayerBase):
     

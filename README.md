@@ -72,7 +72,9 @@
 14. show all cards option during play (ok)
 15. show partner in pinnedMessage (ok)
 16. fix invalid bid showing hand (ok)
-17. end game early
+17. end game early (ok)
+18. bugfix - handle empty payload
+19. bugfix - cant play if not brokeTrump and first
 
 **v3** (pending)
 
@@ -154,4 +156,5 @@ flask
 pyyaml
 pymongo
 dnspython
+pendulum
 ##Packages
