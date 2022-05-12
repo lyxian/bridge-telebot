@@ -94,6 +94,10 @@ def createBot():
         bot.send_message(message.chat.id, 'OK', reply_markup=ReplyKeyboardRemove())
         return
         
+    @bot.message_handler(commands=["restart"])
+    def _restart(message):
+        loadGame(message, mode='currGame')
+        
     @bot.message_handler(commands=["savegame"])
     def _saveGame(message):
         if message.chat.id in db.keys():
@@ -107,16 +111,22 @@ def createBot():
         
     @bot.message_handler(commands=["loadgame"])
     def _loadGame(message):
-        loadGame(message, isBackup=True)
+        loadGame(message, mode='saveGame')
 
-    def loadGame(message, isBackup):
+    def loadGame(message, mode):
         obj = MongoDb(loadConfig())
-        if isBackup:
+        if mode == 'saveGame':
             print('===Loading backup game===')
             dbChatId = f'{message.chat.id}_save'
-        else:
+        elif mode == 'currGame':
+            print('===Restarting current game===')
+            dbChatId = f'{message.chat.id}_curr'
+        elif mode == 'prevGame':
             print('===Continuing previous game===')
             dbChatId = message.chat.id
+        else:
+            print('************UNKNOWN MODE************')
+            return
         if obj.has(dbChatId):
             query = {'chatId': dbChatId}
         else:
@@ -175,6 +185,7 @@ def createBot():
             'player': [player for player in players if isinstance(player, Player)][0],
             'skippedPlayers': []
         }
+        game.saveGame
         startPlay(message)
 
     @bot.message_handler(commands=["startgame"])
@@ -186,7 +197,7 @@ def createBot():
         else:
             # Load saved game
             if Game.hasSaveGame(message.chat.id):
-                loadGame(message, isBackup=False)
+                loadGame(message, mode='prevGame')
                 return
 
         # ===Game Start===

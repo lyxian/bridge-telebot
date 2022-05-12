@@ -81,13 +81,27 @@ class Game():
     @property
     def saveGame(self):
         obj = MongoDb(loadConfig())
+        payload = self._serialize
+        if isinstance(self.chatId, str):
+            return
         if obj.has(self.chatId):
             obj.collection.delete_one({'chatId': self.chatId})
-            obj.collection.insert_one(self._serialize)
+            obj.collection.insert_one(payload)
             print(f'Replaced {self.chatId} in DB')
         else:
-            obj.collection.insert_one(self._serialize)
+            obj.collection.insert_one(payload)
             print(f'Added {self.chatId} to DB')
+        currSaveId = f'{self.chatId}_curr'
+        payload['chatId'] = currSaveId
+        payload.pop('_id')
+        if obj.has(currSaveId):
+            obj.collection.delete_one({'chatId': currSaveId})
+            obj.collection.insert_one(payload)
+            print(f'Added {currSaveId} to DB')
+        else:
+            obj.collection.insert_one(payload)
+            print(f'Replaced {currSaveId} to DB')
+
 
     @property
     def saveGameBackup(self):
@@ -111,7 +125,7 @@ class Game():
     @property
     def rmSaveGame(self):
         obj = MongoDb(loadConfig())
-        if isinstance(self.chatId, str):
+        if isinstance(self.chatId, str): # do not delete *_curr, *_save
             return
         if obj.has(self.chatId):
             obj.collection.delete_one({'chatId': self.chatId})
