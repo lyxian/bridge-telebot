@@ -73,7 +73,10 @@ def createBot():
         if message.chat.id in db.keys():
             if 'pinnedMessageId' in db[message.chat.id].keys():
                 bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
-            db[message.chat.id] = {}
+            game = db[message.chat.id].get('game', None)
+            if game:
+                game.rmSaveGame
+            db.pop(message.chat.id)
         else:
             method = 'getChat'
             params = {
@@ -89,7 +92,6 @@ def createBot():
                 }
                 response = callTelegramAPI(method, params)
         bot.send_message(message.chat.id, 'OK', reply_markup=ReplyKeyboardRemove())
-        db.pop(message.chat.id)
         return
         
     @bot.message_handler(commands=["savegame"])
@@ -562,7 +564,7 @@ def createBot():
         if game._hasEnded or count >= 13:
             bot.send_message(message.chat.id, f'==={game.currentBid} Game Ended===\n{game._results}\n{game._teamResults}', reply_markup=ReplyKeyboardRemove())
             bot.unpin_chat_message(message.chat.id, db[message.chat.id]['pinnedMessageId'])
-            db[message.chat.id] = {}
+            db.pop(message.chat.id)
             game.rmSaveGame
         else:
             playerOrder = game.getPlayerOrder(firstPlayer)

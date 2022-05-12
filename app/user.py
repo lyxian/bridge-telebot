@@ -93,9 +93,13 @@ class Game():
     def saveGameBackup(self):
         obj = MongoDb(loadConfig())
         saveId = f'{self.chatId}_save'
-        payload = self._serialize
+        if obj.has(self.chatId):
+            payload = obj.collection.find_one({'chatId': self.chatId})
+            payload.pop('_id')
+        else:
+            payload = self._serialize
+            payload['roundCount'] = payload['roundCount'] - 1
         payload['chatId'] = saveId
-        payload['roundCount'] = payload['roundCount'] - 1
         if obj.has(saveId):
             obj.collection.delete_one({'chatId': saveId})
             obj.collection.insert_one(payload)
@@ -107,7 +111,7 @@ class Game():
     @property
     def rmSaveGame(self):
         obj = MongoDb(loadConfig())
-        if 'save' in self.chatId:
+        if isinstance(self.chatId, str):
             return
         if obj.has(self.chatId):
             obj.collection.delete_one({'chatId': self.chatId})
