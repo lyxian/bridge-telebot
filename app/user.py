@@ -97,10 +97,10 @@ class Game():
         if obj.has(currSaveId):
             obj.collection.delete_one({'chatId': currSaveId})
             obj.collection.insert_one(payload)
-            print(f'Added {currSaveId} to DB')
+            print(f'Replaced {currSaveId} to DB')
         else:
             obj.collection.insert_one(payload)
-            print(f'Replaced {currSaveId} to DB')
+            print(f'Added {currSaveId} to DB')
 
 
     @property
@@ -288,10 +288,13 @@ class Bot(PlayerBase):
         # - play lowest trump (win)
         if self.canFollow(game):
             self.availableCards = [_ for _ in self.hand if _.suit == game.roundSuit]
-        else:
-            if game.roundCount == 0 or (not game.brokeTrump and not game.playedCards): # TODO - has bug if not brokeTrump and first player
+        else:   
+            if not Deck.checkAllTrump(self, game.trump) and (game.roundCount == 0 or (not game.brokeTrump and not game.playedCards)):
                 # print('No trump allowed')
-                self.availableCards = [_ for _ in self.hand if _.suit != game.trump]
+                if [_ for _ in self.hand if _.suit == game.trump] == self.hand:
+                    self.availableCards = self.hand
+                else:
+                    self.availableCards = [_ for _ in self.hand if _.suit != game.trump]
             else:
                 self.availableCards = self.hand
 
@@ -334,11 +337,11 @@ class Player(PlayerBase):
         print(callTelegramAPI(method, params))
         # self.bot.send_message(game.chatId, 'Your Cards', reply_markup=createMarkupHand(self.hand))
 
-    def play(self, game):
+    def play(self, game): # DEPRECIATED
         if self.canFollow(game):
             self.availableCards = [_ for _ in self.hand if _.suit == game.roundSuit]
-        else:
-            if game.roundCount == 0 or not game.brokeTrump:
+        else:   
+            if game.roundCount == 0 or (not game.brokeTrump and not game.playedCards):
                 # print('No trump allowed')
                 self.availableCards = [_ for _ in self.hand if _.suit != game.trump]
             else:

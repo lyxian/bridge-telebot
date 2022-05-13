@@ -223,5 +223,10 @@ class Deck:
                 return card
         return None
 
+    @staticmethod
+    def checkAllTrump(player, trump):
+        return len([_ for _ in player.hand if _.suit != trump]) == 0
+
+
 if __name__ == '__main__':
     pass

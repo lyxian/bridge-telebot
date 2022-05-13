@@ -74,7 +74,7 @@
 16. fix invalid bid showing hand (ok)
 17. end game early (ok)
 18. bugfix - handle empty payload
-19. bugfix - cant play if not brokeTrump and first
+19. bugfix - cant play if not brokeTrump and first (ok)
 20. add /restart (with first state)
 
 **v3** (pending)
