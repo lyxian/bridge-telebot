@@ -597,9 +597,12 @@ def createBot():
                     if player.canFollow(game):
                         player.availableCards = [_ for _ in player.hand if _.suit == game.roundSuit]
                     else:
-                        if game.roundCount <= 0 or (not game.brokeTrump and not game.playedCards):
+                        if not Deck.checkAllTrump(player, game.trump) and (game.roundCount == 0 or (not game.brokeTrump and not game.playedCards)):
                             # print('No trump allowed')
-                            player.availableCards = [_ for _ in player.hand if _.suit != game.trump]
+                            if [_ for _ in player.hand if _.suit == game.trump] == player.hand:
+                                player.availableCards = player.hand
+                            else:
+                                player.availableCards = [_ for _ in player.hand if _.suit != game.trump]
                         else:
                             player.availableCards = player.hand
                     bot.send_message(message.chat.id, f'Your Hand: ', reply_markup=createMarkupPlay(player.availableCards, False))
