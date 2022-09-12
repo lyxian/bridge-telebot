@@ -150,6 +150,10 @@
 - bot starts with bad lowest card
 - partner after bidder, plays too low card
 
+**extra**
+
+- integrate encryptionStore
+
 ##Packages (list required packages & run .scripts/python-pip.sh)
 PyTelegramBotAPI
 cryptography
