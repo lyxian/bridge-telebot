@@ -153,6 +153,7 @@
 **extra**
 
 - integrate encryptionStore
+- integrate route errors
 
 ##Packages (list required packages & run .scripts/python-pip.sh)
 PyTelegramBotAPI
